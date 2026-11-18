@@ -32,3 +32,17 @@ Summary of every request and decision so far, in order. Rules live in `AGENTS.md
 - Verify BCU/EBC/BDC counts for 3–5 inverter HV systems.
 - dcRatio 1.3 and lvMaxKw 40 still provisional.
 - Publish after code changes so the bot/app use them.
+
+## Continued (2026-11-18, later)
+19. Chat background: new ACTES-logo watermark (day/night) in `src/assets/actes-chat-bg*.webp`, `.chat-bg` in styles.css.
+20. Equations screen: cable meters line says only «ثابت».
+21. Quote line order follows equations order (panels, inverter, battery/storage, DC box, AC/combiner, cable, MC4, rest) in app list + PDF + ready systems (`catOfLine`); bot State Machine + Build Quote HTML use same order (cable before MC4).
+22. Added 5 catalog items: «لوحة حماية تيار متردد 30kw» + 4 «لوحة تجميع تيار متردد 30kw» (2–5 inverters), copied from 50kw prices/specs (provisional).
+23. Fidus Pro 5.12kWh choice: removes lithium stand, adds ac_01 single-phase AC protection panel ($35); UF5000 restores stand. App + bot `resBatSwap`.
+24. Equations screen simplified: panels = 2 equations (total panels, string capacity with cold factor 1.1 — confirmed suitable); DC box = 2 equations (boxes = ceil(strings/10), lines = strings/boxes rounded up to even). Results unchanged.
+25. Workspace moved again; GitHub + n8n connectors reconnected and verified.
+
+## Open / next
+- Bot still loads images/datasheet PDFs from old project hosts (still working); move here if asked.
+- Confirm the two daily backup schedules exist after workspace move.
+- 30kw panel prices/breakers provisional.

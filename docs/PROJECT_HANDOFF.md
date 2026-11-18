@@ -22,7 +22,7 @@ Rules and decisions: see `AGENTS.md`.
 - ACTES standalone app linked via acts-bridge and tested (service request reached CRM chats + ACTES tab).
 - Full history of requests: see `AGENTS.md` rules + `.lovable/plan/` archived plans.
 
-## Latest state (2026-11-18)
+## Latest state (2026-11-18) — read docs/CONVERSATION_HISTORY.md "Continued" sections to resume
 - Read `docs/CONVERSATION_HISTORY.md` for the full request history and open items.
 - Bot workflow copy: `docs/n8n/actes-bot-workflow.json` (put the real BOT_INGEST_SECRET back before importing into n8n).
 - Project memory copy: `docs/project-memory/` — recreate as project memory after import.
