@@ -214,12 +214,7 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
           <Ln l="السعة">استهلاك الليل</Ln>
           <Nt>استهلاك الليل = الاستهلاك اليومي × نسبة الليل · إذا لم يُعرف الاستهلاك (منظومة جاهزة) تُحسب من عدد بطاريات الهاي فولتج × سعة البطارية</Nt>
           <Nt>الخطوة 2 — راكات Hithium 112S (الافتراضي): نفس البطاريات والكنترولات المحسوبة أعلاه</Nt>
-          <Nt>الخطوة 3 — راكات بايلونتك</Nt>
-          <Ln l={<>بطاريات <V>M1</V></>}>الأكبر من<P><V>6</V><O c="،" /><Fr n="السعة" d={<R>سعة <V>M1</V></R>} /></P></Ln>
-          <Nt>تُستخدم M1 عندما السعة ≤ حد M1 · راك 13 حتى 13 بطارية، وإلا راك 23 · كنترول وطقم واحد</Nt>
-          <Ln l={<>بطاريات <V>M5</V></>}>الأكبر من<P><V>7</V><O c="،" /><Fr n="السعة" d={<R>سعة <V>M5</V></R>} /></P></Ln>
-          <Ln l={<>راكات <V>M5</V></>}><Fr n={<R>بطاريات <V>M5</V></R>} d={<V>20</V>} /></Ln>
-          <Nt>تُستخدم M5 عندما السعة أكبر من حد M1 · راك 11 أو 16 أو 20 · كنترول وطقم لكل راك</Nt>
+          <Nt>الخطوة 3 — راكات بايلونتك: M1 إذا كفت بطاريات M1 حتى <V>{fx.m1MaxBat}</V> بطارية، وإلا M5 (التفاصيل في معادلتي M1 و M5 بالأسفل)</Nt>
           <Nt>الخطوة 4 — الكبائن (Hithium 112C · Pylontech 261 · Pylontech 313)</Nt>
           <Ln l="عدد الكبائن">أقرب عدد صحيح لـ<P><Fr n="السعة" d="سعة الكبينة" /></P></Ln>
           <Ln l="الفرق"><P>السعة<O c="−" />عدد الكبائن<O c="×" />سعة الكبينة</P></Ln>
@@ -230,7 +225,30 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
         <Num label="سماحية الكبائن ± (كيلووات ساعة)" value={fx.cabTol} onChange={(v) => up({ cabTol: v })} />
         <Num label="سعة بطارية بايلونتك M1 (كيلووات ساعة)" value={fx.m1Kwh} onChange={(v) => up({ m1Kwh: v })} />
         <Num label="سعة بطارية بايلونتك M5 (كيلووات ساعة)" value={fx.m5Kwh} onChange={(v) => up({ m5Kwh: v })} />
-        <Num label="حد استخدام M1 (كيلووات ساعة)" value={fx.m1MaxKwh} onChange={(v) => up({ m1MaxKwh: v })} />
+      </Eq>}
+      {hv && <Eq n={++n + 1} title="صنف بطاريات وراك بايلونتك M1">
+        <L>
+          <Ln l={<>بطاريات <V>M1</V></>}>الأكبر من<P><V>{fx.m1MinBat}</V><O c="،" /><Fr n="السعة" d={<R>سعة <V>M1</V></R>} /></P></Ln>
+          <Nt>رينج M1: من <V>{fx.m1MinBat}</V> إلى <V>{fx.m1MaxBat}</V> بطارية (من {(fx.m1MinBat * fx.m1Kwh).toFixed(1)} إلى {(fx.m1MaxBat * fx.m1Kwh).toFixed(1)} كيلووات ساعة)</Nt>
+          <Ln l={<>راك <V>M1</V></>}>راك صغير إذا البطاريات ≤ <V>{fx.m1RackSmall}</V>، وإلا راك كبير ({fx.m1MaxBat})</Ln>
+          <Nt>راك واحد + كنترول واحد + طقم كابلات واحد · إذا زادت البطاريات عن {fx.m1MaxBat} ينتقل إلى M5</Nt>
+        </L>
+        <Num label="أقل عدد بطاريات M1" value={fx.m1MinBat} onChange={(v) => up({ m1MinBat: Math.round(v) })} />
+        <Num label="سعة الراك الصغير M1 (بطارية)" value={fx.m1RackSmall} onChange={(v) => up({ m1RackSmall: Math.round(v) })} />
+        <Num label="أقصى عدد بطاريات M1 (الراك الكبير)" value={fx.m1MaxBat} onChange={(v) => up({ m1MaxBat: Math.round(v), m1MaxKwh: Math.round(v) * fx.m1Kwh })} />
+      </Eq>}
+      {hv && <Eq n={++n + 1} title="صنف بطاريات وراك بايلونتك M5">
+        <L>
+          <Ln l={<>بطاريات <V>M5</V></>}>الأكبر من<P><V>{fx.m5MinBat}</V><O c="،" /><Fr n="السعة" d={<R>سعة <V>M5</V></R>} /></P></Ln>
+          <Ln l={<>عدد راكات <V>M5</V></>}><Ceil><Fr n={<R>بطاريات <V>M5</V></R>} d={<V>{fx.m5MaxBat}</V>} /></Ceil></Ln>
+          <Ln l="بطاريات كل راك"><Ceil><Fr n="البطاريات" d="عدد الراكات" /></Ceil></Ln>
+          <Nt>مقاس الراك: حتى <V>{fx.m5RackSmall}</V> → راك 11 · حتى <V>{fx.m5RackMedium}</V> → راك 16 · حتى <V>{fx.m5MaxBat}</V> → راك 20</Nt>
+          <Nt>مثال: 30 بطارية → 2 راك × 15 بطارية → راكين مقاس 16 · كنترول وطقم لكل راك</Nt>
+        </L>
+        <Num label="أقل عدد بطاريات M5" value={fx.m5MinBat} onChange={(v) => up({ m5MinBat: Math.round(v) })} />
+        <Num label="سعة الراك الصغير M5 (بطارية)" value={fx.m5RackSmall} onChange={(v) => up({ m5RackSmall: Math.round(v) })} />
+        <Num label="سعة الراك الوسط M5 (بطارية)" value={fx.m5RackMedium} onChange={(v) => up({ m5RackMedium: Math.round(v) })} />
+        <Num label="أقصى بطاريات في راك M5" value={fx.m5MaxBat} onChange={(v) => up({ m5MaxBat: Math.round(v) })} />
       </Eq>}
       {hv && <Eq n={++n + 1} title="صنف كنترول الهاي فولتج BCU">
         <L>

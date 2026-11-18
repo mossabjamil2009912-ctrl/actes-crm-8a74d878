@@ -23,12 +23,12 @@ export function storageParts(choice: StorageChoice, cap: number, f: Formulas = F
   if (choice === "cab112") return cabFit("CAB_HITHIUM_112", cap, f.cabKwh, f);
   if (choice === "cab261") return cabFit("CAB_PYLON_261", cap, 261, f);
   if (choice === "cab313") return cabFit("CAB_PYLON_313", cap, 313, f);
-  if (cap <= f.m1MaxKwh) {
-    const n = Math.max(6, up(cap / f.m1Kwh));
-    return [["BAT_PYLON_M1_4_74K", n], [n <= 13 ? "RACK_M1C_13" : "RACK_M1C_23", 1], ["CTRL_M1C", 1], ["KIT_M1C", 1]];
+  const n1 = Math.max(f.m1MinBat, up(cap / f.m1Kwh));
+  if (n1 <= f.m1MaxBat) {
+    return [["BAT_PYLON_M1_4_74K", n1], [n1 <= f.m1RackSmall ? "RACK_M1C_13" : "RACK_M1C_23", 1], ["CTRL_M1C", 1], ["KIT_M1C", 1]];
   }
-  const n = Math.max(7, up(cap / f.m5Kwh)), racks = Math.ceil(n / 20), per = Math.ceil(n / racks);
-  return [["BAT_PYLON_M5_15_68K", n], [per <= 11 ? "RACK_M5_11" : per <= 16 ? "RACK_M5_16" : "RACK_M5_20", racks], ["CTRL_M5", racks], ["KIT_M5", racks]];
+  const n = Math.max(f.m5MinBat, up(cap / f.m5Kwh)), racks = Math.ceil(n / f.m5MaxBat), per = Math.ceil(n / racks);
+  return [["BAT_PYLON_M5_15_68K", n], [per <= f.m5RackSmall ? "RACK_M5_11" : per <= f.m5RackMedium ? "RACK_M5_16" : "RACK_M5_20", racks], ["CTRL_M5", racks], ["KIT_M5", racks]];
 }
 
 const isHvBat = (r: EqItem | undefined, l: EqLine) => r?.category === "batteries" && /HV|هاي فولتج/i.test(`${l.key} ${r.name}`);
