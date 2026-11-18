@@ -259,9 +259,7 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
       </Eq>}
       {hv && <Eq n={++n + 1} title="صنف كنترول الربط الإضافي EBC">
         <L>
-          <Ln l="بطاريات الكنترول الأخير">عدد البطاريات<O c="−" /><P>عدد <V>BCU</V><O c="−" /><V>1</V></P><O c="×" />بطاريات كل كنترول</Ln>
           <Ln l={<>عدد <V>EBC</V></>}>عدد الكنترولات التي فيها أكثر من <V>{fx.ebcOver}</V> بطاريات</Ln>
-          <Nt>مثال: 22 بطارية ← كنترول فيه 15 بطارية يأخذ كنترول ربط، وكنترول فيه 7 بطاريات بدونه · النتيجة: كنترولين وكنترول ربط واحد</Nt>
         </L>
         <Num label="يحتاج EBC إذا زادت بطاريات الكنترول عن" value={fx.ebcOver} onChange={(v) => up({ ebcOver: Math.round(v) })} />
       </Eq>}
