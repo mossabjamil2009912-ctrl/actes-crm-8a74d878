@@ -261,6 +261,16 @@ export const inverterChoices = (opts: Preset[]): InvChoice[] => {
   return [...m.values()].sort((a, b) => a.kw - b.kw);
 };
 
+// Quote lines follow the equations order: panels, inverters, storage, DC, AC, cable, MC4, then the rest.
+const LINE_ORDER = ["panels", "inverters", "batteries", "racks", "battery_controls", "dc_boxes", "ac_panel", "combiner_panels", "cables", "stands", "panel_mounts", "install_accessories"];
+const lineRank = (l: { key: string; name: string }, cat?: string) => {
+  if (cat === "cables" && /MC4|كنش/i.test(`${l.key} ${l.name}`)) return 8.5;
+  const i = cat ? LINE_ORDER.indexOf(cat) : -1;
+  return i < 0 ? 99 : i;
+};
+export const orderLines = <T extends { key: string; name: string }>(ls: T[], catOf: (k: string) => string | undefined): T[] =>
+  ls.map((l, i) => ({ l, i, r: lineRank(l, catOf(l.key)) })).sort((a, b) => a.r - b.r || a.i - b.i).map((x) => x.l);
+
 function quoteBody(no: string, cust: { name: string; phone: string; city: string }, lines: Line[], notes: string) {
   const total = lines.reduce((s, l) => s + l.price * l.qty, 0);
   const o = location.origin;
@@ -457,7 +467,7 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
     return m;
   }, [items]);
   const list = (active === "custom" ? [] : byCat[active] ?? []).filter((r) => !q || (r.name + r.key).toLowerCase().includes(q.toLowerCase()));
-  const chosen = Object.values(lines);
+  const chosen = orderLines(Object.values(lines), (k) => items.find((r) => r.key === k)?.category);
   const total = chosen.reduce((s, l) => s + l.price * l.qty, 0);
   const countIn = (k: string) => chosen.filter((l) => (k === "custom" ? l.key.startsWith("CUSTOM_") : byCat[k]?.some((r) => r.key === l.key))).length;
 
@@ -514,6 +524,7 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
   const [preview, setPreview] = useState<{ url: string; name: string; html: string } | null>(null);
   const generate = async (src: Line[] = chosen) => {
     if (!src.length) return setMsg("اختر صنفا واحدا على الأقل");
+    src = orderLines(src, (k) => items.find((r) => r.key === k)?.category);
     setBusy(true); setMsg("جارٍ إنشاء ملف PDF...");
     try {
       const num = no ?? "ACTES-Q-" + Date.now().toString().slice(-6);
