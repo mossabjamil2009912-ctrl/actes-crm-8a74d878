@@ -648,7 +648,14 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
   const lvBat = lvChoices(Object.values(lines), items);
   const pickLvBat = (o: LvBatOpt) => {
     const r = lvCatalogItem(o, items); if (!r) return;
-    const next = Object.values(lines).map((l) => lvBatOf(l.key, l.name) ? { ...l, key: r.key, name: r.name, unit: r.unit ?? l.unit, price: Number(r.price ?? 0), specs: specsOf(r) } : l);
+    let next = Object.values(lines).map((l) => lvBatOf(l.key, l.name) ? { ...l, key: r.key, name: r.name, unit: r.unit ?? l.unit, price: Number(r.price ?? 0), specs: specsOf(r) } : l);
+    // Fidus Pro 5.12 kWh comes without the lithium stand: swap it for the single-phase AC protection panel (and back for UF5000).
+    const swap = (isOld: (l: Line) => boolean, newKey: string) => {
+      const ni = items.find((i) => i.key === newKey); if (!ni || !next.some(isOld)) return;
+      next = next.map((l) => isOld(l) ? { key: ni.key, name: ni.name, unit: ni.unit ?? l.unit, price: Number(ni.price ?? 0), qty: 1, specs: specsOf(ni) } : l);
+    };
+    if (o === "fp") swap((l) => /استند/.test(l.name), "ac_01");
+    if (o === "uf") swap((l) => l.key === "ac_01", "STAND_LITHIUM_6K");
     setLines(Object.fromEntries(next.map((l) => [l.key, l]))); void generate(next);
   };
   const loadQuote = (qt: (typeof quotes)[number]) => {
