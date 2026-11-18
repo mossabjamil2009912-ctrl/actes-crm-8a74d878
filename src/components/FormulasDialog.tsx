@@ -285,8 +285,8 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
         <Num label="معامل الأمان" value={fx.acSafety} onChange={(v) => up({ acSafety: v })} />
       </Eq>
       <Eq n={++n + 1} title="صنف الكابل">
-        <L><Ln l="أمتار الكابل">عدد الإنفرترات<O c="×" />متر لكل إنفرتر</Ln></L>
-        <Num label="متر كابل لكل إنفرتر" value={fx.cableM} onChange={(v) => up({ cableM: v })} />
+        <L><Ln l="أمتار الكابل">ثابت لتحديد سعر المتر (لا يتغير بعدد الإنفرترات)</Ln></L>
+        <Num label="أمتار الكابل في العرض" value={fx.cableM} onChange={(v) => up({ cableM: v })} />
       </Eq>
       <Eq n={++n + 1} title="صنف كنشات MC4">
         <L><Ln l={<>أطقم <V>MC4</V></>}>عدد الاسترنقات<O c="×" />أطقم لكل استرنق</Ln></L>
