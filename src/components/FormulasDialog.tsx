@@ -193,40 +193,37 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
         <Num label="أقصى قدرة للجهد المنخفض (كيلو)" value={fx.lvMaxKw} onChange={(v) => up({ lvMaxKw: v })} />
         <Num label="أقصى عدد إنفرترات بالتوازي" value={fx.maxInverters} onChange={(v) => up({ maxInverters: Math.round(v) })} />
       </Eq>
-      <Eq n={++n + 1} title={hv ? "صنف بطاريات الجهد العالي" : "صنف بطاريات الليثيوم"}>
+      <Eq n={++n + 1} title={hv ? "نظام التخزين" : "صنف بطاريات الليثيوم"}>
         <L>
-          <Ln l="استهلاك الليل">الاستهلاك اليومي<O c="×" />نسبة الليل</Ln>
+          {hv && <Nt>السعة المطلوبة</Nt>}
+          <Ln l={hv ? "السعة (استهلاك الليل)" : "استهلاك الليل"}>الاستهلاك اليومي<O c="×" />نسبة الليل</Ln>
+          {hv && <Nt>خيار 1 — راكات Hithium 16 HV (الافتراضي)</Nt>}
           {(() => {
             const c = <Ceil><Fr n={<R>استهلاك الليل<O c="−" />السماحية</R>} d={<R>سعة البطارية<O c="×" />التفريغ</R>} /></Ceil>;
             return <Ln l="عدد البطاريات">{hv ? <>الأكبر من<P>أقل عدد<O c="،" />{c}</P></> : c}</Ln>;
           })()}
+          {hv && <>
+            <Nt>خيار 2 — راكات Pylontech: M1 إذا كفت حتى <V>{fx.m1MaxBat}</V> بطارية، وإلا M5 (التفاصيل في معادلتي M1 و M5 بالأسفل)</Nt>
+            <Nt>خيار 3 — كبائن التخزين (Hithium 112C · Pylontech 261 · Pylontech 313)</Nt>
+            <Ln l="عدد الكبائن">أقرب عدد صحيح لـ<P><Fr n="السعة" d="سعة الكبينة" /></P></Ln>
+            <Ln l="الفرق"><P>السعة<O c="−" />عدد الكبائن<O c="×" />سعة الكبينة</P></Ln>
+            <Nt>تظهر الكبينة فقط إذا كان الفرق بين −السماحية و +السماحية، وإلا تختفي</Nt>
+          </>}
         </L>
         <Num label="نسبة الليل عند اختيار 30% ليل" value={fx.night[30]} onChange={(v) => up({ night: { ...fx.night, 30: v } })} />
         <Num label="نسبة الليل عند اختيار 50/50" value={fx.night[50]} onChange={(v) => up({ night: { ...fx.night, 50: v } })} />
         <Num label="نسبة الليل عند اختيار 70% ليل" value={fx.night[70]} onChange={(v) => up({ night: { ...fx.night, 70: v } })} />
         <Num label="معامل تفريغ البطارية" value={fx.dod} onChange={(v) => up({ dod: Math.min(v, 1) })} />
-        <Num label="سعة البطارية (كيلووات ساعة)" value={fx.batKwh} onChange={(v) => up({ batKwh: v })} />
+        <Num label={hv ? "سعة بطارية Hithium 16 HV (كيلووات ساعة)" : "سعة البطارية (كيلووات ساعة)"} value={fx.batKwh} onChange={(v) => up({ batKwh: v })} />
         <Num label="سماحية نقص الليل (كيلووات ساعة)" value={fx.batTol} onChange={(v) => up({ batTol: v })} />
-        {hv && <Num label="أقل عدد بطاريات هاي فولتج" value={fx.hvMinBat} onChange={(v) => up({ hvMinBat: Math.round(v) })} />}
+        {hv && <>
+          <Num label="أقل عدد بطاريات Hithium 16 HV" value={fx.hvMinBat} onChange={(v) => up({ hvMinBat: Math.round(v) })} />
+          <Num label="سعة كبينة Hithium 112C (كيلووات ساعة)" value={fx.cabKwh} onChange={(v) => up({ cabKwh: v })} />
+          <Num label="سماحية الكبائن ± (كيلووات ساعة)" value={fx.cabTol} onChange={(v) => up({ cabTol: v })} />
+          <Num label="سعة بطارية بايلونتك M1 (كيلووات ساعة)" value={fx.m1Kwh} onChange={(v) => up({ m1Kwh: v })} />
+          <Num label="سعة بطارية بايلونتك M5 (كيلووات ساعة)" value={fx.m5Kwh} onChange={(v) => up({ m5Kwh: v })} />
+        </>}
       </Eq>
-      {hv && <Eq n={++n + 1} title="نظام التخزين">
-        <L>
-          <Nt>الخطوة 1 — السعة المطلوبة</Nt>
-          <Ln l="السعة">استهلاك الليل</Ln>
-          <Nt>استهلاك الليل = الاستهلاك اليومي × نسبة الليل · إذا لم يُعرف الاستهلاك (منظومة جاهزة) تُحسب من عدد بطاريات الهاي فولتج × سعة البطارية</Nt>
-          <Nt>الخطوة 2 — راكات Hithium 112S (الافتراضي): نفس البطاريات والكنترولات المحسوبة أعلاه</Nt>
-          <Nt>الخطوة 3 — راكات بايلونتك: M1 إذا كفت بطاريات M1 حتى <V>{fx.m1MaxBat}</V> بطارية، وإلا M5 (التفاصيل في معادلتي M1 و M5 بالأسفل)</Nt>
-          <Nt>الخطوة 4 — الكبائن (Hithium 112C · Pylontech 261 · Pylontech 313)</Nt>
-          <Ln l="عدد الكبائن">أقرب عدد صحيح لـ<P><Fr n="السعة" d="سعة الكبينة" /></P></Ln>
-          <Ln l="الفرق"><P>السعة<O c="−" />عدد الكبائن<O c="×" />سعة الكبينة</P></Ln>
-          <Nt>تظهر الكبينة فقط إذا كان الفرق بين −السماحية و +السماحية، وإلا تختفي</Nt>
-          <Nt>كل الأعداد تُقرَّب للأعلى ما عدا عدد الكبائن (لأقرب عدد)</Nt>
-        </L>
-        <Num label="سعة كبينة Hithium 112C (كيلووات ساعة)" value={fx.cabKwh} onChange={(v) => up({ cabKwh: v })} />
-        <Num label="سماحية الكبائن ± (كيلووات ساعة)" value={fx.cabTol} onChange={(v) => up({ cabTol: v })} />
-        <Num label="سعة بطارية بايلونتك M1 (كيلووات ساعة)" value={fx.m1Kwh} onChange={(v) => up({ m1Kwh: v })} />
-        <Num label="سعة بطارية بايلونتك M5 (كيلووات ساعة)" value={fx.m5Kwh} onChange={(v) => up({ m5Kwh: v })} />
-      </Eq>}
       {hv && <Eq n={++n + 1} title="صنف بطاريات وراك بايلونتك M1">
         <L>
           <Ln l={<>بطاريات <V>M1</V></>}>الأكبر من<P><V>{fx.m1MinBat}</V><O c="،" /><Fr n="السعة" d={<R>سعة <V>M1</V></R>} /></P></Ln>
