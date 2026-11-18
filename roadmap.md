@@ -25,5 +25,5 @@
 - [x] Reconnect GitHub API and n8n in the new workspace
 - [x] Import full project from GitHub repo actes-crm-cea5aa2e into this project (Nov 18)
 - [x] Enter DASHBOARD_PASSWORD and BOT_INGEST_SECRET
-- [ ] Connect GitHub API for the daily backup (blocked: user connects)
+- [x] Connect GitHub API and n8n (Nov 18)
 - [ ] Publish and point n8n at the published address (blocked: user publishes)

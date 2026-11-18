@@ -45,8 +45,8 @@
   "capability": "github backup job",
   "source": "/api/public/jobs/github-backup (GITHUB_API_KEY via GitHub connector)",
   "outcome": "keep",
-  "status": "pending",
-  "next_action": "connect GitHub connector; recreate schedules at cutover"
+  "status": "done",
+  "next_action": "GitHub connected, backup repo reachable; schedules to be recreated at cutover"
  },
  {
   "capability": "AI",
