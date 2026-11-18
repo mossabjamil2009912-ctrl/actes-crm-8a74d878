@@ -1,1 +1,2 @@
 - LV battery brand choice: `lv-battery.ts` ↔ bot `ACTES_LVBAT` (16 kWh, sized systems) and `ACTES_RESBAT` (5.12 kWh, ready-made home systems) — change together.
+- `auth-attacher.ts` and `cron-auth.ts` live here, not in `src/integrations/supabase/` — that folder is platform-managed in this project and drops hand-added files.

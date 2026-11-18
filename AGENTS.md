@@ -58,4 +58,3 @@ use the editor.
 - `orders_legacy`: unused old orders table, kept for its rows.
 - `formulas.presetItems` (title → [key, qty]) overrides preset items in `loadPreset` — one stored edit, originals in code.
 - HV storage choice: `src/lib/storage.ts` ↔ bot `ACTES_STORAGE_*` — change together.
-- The bearer attacher (`src/lib/auth-attacher.ts`) and cron auth (`src/lib/cron-auth.ts`) live in `src/lib`, not `src/integrations/supabase/` — that folder is platform-managed in this project and drops hand-added files.
