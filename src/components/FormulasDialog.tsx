@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { X } from "lucide-react";
+import { X, Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getFormulas, saveFormulas, getKwhPrice, setKwhPrice, listCatalog } from "@/lib/crm.functions";
@@ -10,6 +10,7 @@ import { PRESETS, comKeyOf, panelsOf, defaultPresetItems } from "@/components/Qu
 
 const RES = BOT_PRESETS.filter((p) => p.type !== "com");
 const COM = PRESETS.filter((p) => p.type === "com");
+const clampZ = (z: number) => Math.min(2.5, Math.max(0.6, Math.round(z * 100) / 100));
 const groupsOf = <T extends { group: string }>(l: T[]) => [...new Set(l.map((p) => p.group))];
 
 // Keeps bracketed English/number parts like "(1500V)" in one piece inside Arabic text.
@@ -297,12 +298,41 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
     </>);
   };
 
+  const [full, setFull] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const boxRef = React.useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = boxRef.current; if (!el) return;
+    // Ctrl/⌘ + mouse wheel (and laptop touchpad pinch) zooms the content.
+    const wheel = (e: WheelEvent) => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); setZoom((z) => clampZ(z * (e.deltaY < 0 ? 1.08 : 1 / 1.08))); };
+    // Two-finger pinch on touch screens.
+    let d0 = 0, z0 = 1;
+    const dist = (t: TouchList) => Math.hypot(t[0]!.clientX - t[1]!.clientX, t[0]!.clientY - t[1]!.clientY);
+    const ts = (e: TouchEvent) => { if (e.touches.length === 2) { d0 = dist(e.touches); setZoom((z) => (z0 = z)); } };
+    const tm = (e: TouchEvent) => { if (e.touches.length === 2 && d0) { e.preventDefault(); const r = dist(e.touches) / d0; setZoom(clampZ(z0 * r)); } };
+    const te = () => { d0 = 0; };
+    el.addEventListener("wheel", wheel, { passive: false });
+    el.addEventListener("touchstart", ts, { passive: true });
+    el.addEventListener("touchmove", tm, { passive: false });
+    el.addEventListener("touchend", te);
+    return () => { el.removeEventListener("wheel", wheel); el.removeEventListener("touchstart", ts); el.removeEventListener("touchmove", tm); el.removeEventListener("touchend", te); };
+  }, []);
+
   const small = RES.map((p, i) => (/^إنفرتر (1\.6|6\.2) /.test(p.group) ? i : -1)).filter((i) => i >= 0);
 
   return (
-    <div dir="rtl" className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/40 p-2" onClick={onClose}>
-      <div className="flex max-h-[92vh] w-full max-w-lg flex-col gap-2 rounded-xl border border-border bg-card p-3 text-card-foreground shadow-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between"><h2 className="font-bold">المعادلات</h2><button onClick={onClose} aria-label="إغلاق"><X className="h-4 w-4" /></button></div>
+    <div dir="rtl" className={`fixed inset-0 z-[60] flex items-center justify-center bg-foreground/40 ${full ? "p-0" : "p-2"}`} onClick={onClose}>
+      <div ref={boxRef} className={`flex flex-col gap-2 border border-border bg-card p-3 text-card-foreground shadow-lg ${full ? "h-full w-full rounded-none" : "max-h-[92vh] w-full max-w-lg rounded-xl"}`} onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between gap-2"><h2 className="font-bold">المعادلات</h2>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setZoom((z) => clampZ(z - 0.1))} aria-label="تصغير" className="rounded-md border border-border p-1"><ZoomOut className="h-4 w-4" /></button>
+            <button onClick={() => setZoom(1)} className="min-w-12 rounded-md border border-border px-1 py-0.5 text-[11px] font-bold" aria-label="الحجم الأصلي">{Math.round(zoom * 100)}%</button>
+            <button onClick={() => setZoom((z) => clampZ(z + 0.1))} aria-label="تكبير" className="rounded-md border border-border p-1"><ZoomIn className="h-4 w-4" /></button>
+            <button onClick={() => setFull(!full)} aria-label={full ? "تصغير النافذة" : "ملء الشاشة"} className="rounded-md border border-border p-1">{full ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}</button>
+            <button onClick={onClose} aria-label="إغلاق" className="p-1"><X className="h-4 w-4" /></button>
+          </div>
+        </div>
+        <div className="flex min-h-0 flex-1 flex-col gap-2" style={{ zoom }}>
         <div className="grid grid-cols-2 gap-1 text-[11px] font-semibold">
           {([["eq", "تعديل المعادلات"], ["ranges", "تعديل النطاقات"]] as const).map(([k, l]) => (
             <button key={k} onClick={() => setView(k)} className={`rounded-lg px-1 py-1.5 ${view === k ? "bg-ink text-ink-foreground" : "bg-muted"}`}>{l}</button>
@@ -373,6 +403,7 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
               {comSub === "hv" && items(f, true)}
             </div>
           )}
+        </div>
         </div>
         {msg && <p className={`text-xs ${msg.ok ? "text-primary" : "text-destructive"}`}>{msg.t}</p>}
         <div className="flex gap-2">
