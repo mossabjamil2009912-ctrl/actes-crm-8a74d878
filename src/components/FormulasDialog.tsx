@@ -229,6 +229,8 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
           <Ln l={<>بطاريات <V>M1</V></>}>الأكبر من<P><V>{fx.m1MinBat}</V><O c="،" /><Fr n="السعة" d={<R>سعة <V>M1</V></R>} /></P></Ln>
           <Ln l={<>عدد راكات <V>M1</V></>}><Ceil><Fr n={<R>بطاريات <V>M1</V></R>} d={<V>{fx.m1MaxBat}</V>} /></Ceil></Ln>
           <Ln l="بطاريات كل راك"><Ceil><Fr n="البطاريات" d="عدد الراكات" /></Ceil></Ln>
+          <Ln l="مقاس الراك">راك <V>{fx.m1RackSmall}</V> إذا بطاريات كل راك ≤ <V>{fx.m1RackSmall}</V></Ln>
+          <Ln l="">راك <V>{fx.m1MaxBat}</V> إذا بطاريات كل راك أكبر من <V>{fx.m1RackSmall}</V></Ln>
         </L>
         <Num label="أقل عدد بطاريات M1" value={fx.m1MinBat} onChange={(v) => up({ m1MinBat: Math.round(v) })} />
         <Num label="سعة الراك الصغير M1 (بطارية)" value={fx.m1RackSmall} onChange={(v) => up({ m1RackSmall: Math.round(v) })} />
@@ -239,6 +241,9 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
           <Ln l={<>بطاريات <V>M5</V></>}>الأكبر من<P><V>{fx.m5MinBat}</V><O c="،" /><Fr n="السعة" d={<R>سعة <V>M5</V></R>} /></P></Ln>
           <Ln l={<>عدد راكات <V>M5</V></>}><Ceil><Fr n={<R>بطاريات <V>M5</V></R>} d={<V>{fx.m5MaxBat}</V>} /></Ceil></Ln>
           <Ln l="بطاريات كل راك"><Ceil><Fr n="البطاريات" d="عدد الراكات" /></Ceil></Ln>
+          <Ln l="مقاس الراك">راك <V>{fx.m5RackSmall}</V> إذا بطاريات كل راك ≤ <V>{fx.m5RackSmall}</V></Ln>
+          <Ln l="">راك <V>{fx.m5RackMedium}</V> إذا بطاريات كل راك ≤ <V>{fx.m5RackMedium}</V></Ln>
+          <Ln l="">راك <V>{fx.m5MaxBat}</V> إذا بطاريات كل راك أكبر من <V>{fx.m5RackMedium}</V></Ln>
         </L>
         <Num label="أقل عدد بطاريات M5" value={fx.m5MinBat} onChange={(v) => up({ m5MinBat: Math.round(v) })} />
         <Num label="سعة الراك الصغير M5 (بطارية)" value={fx.m5RackSmall} onChange={(v) => up({ m5RackSmall: Math.round(v) })} />
