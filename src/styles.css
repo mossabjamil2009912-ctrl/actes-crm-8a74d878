@@ -275,3 +275,7 @@
 
 .eq-box .eq-v { font-family: "Cambria Math", "STIX Two Math", "Latin Modern Math", "Times New Roman", serif; font-size: 14px; font-style: italic; unicode-bidi: isolate; }
 .eq-box .eq-paren { border-radius: 10px / 50%; }
+
+/* خلفية شاشة المحادثة: نقشة تتكرر، وقابلة للنهار والليل */
+.chat-bg { background-image: url("./assets/actes-chat-bg.webp"); background-size: 420px 420px; background-repeat: repeat; }
+.dark .chat-bg { background-image: url("./assets/actes-chat-bg-dark.webp"); }
