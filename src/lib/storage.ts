@@ -10,8 +10,8 @@ export const STORAGE_LABELS: Record<StorageChoice, string> = {
 // Customer picks a group first, then a model inside it.
 export type StorageGroup = "bat" | "rack" | "cab";
 export const STORAGE_GROUPS: { g: StorageGroup; label: string; opts: StorageChoice[] }[] = [
-  { g: "bat", label: "Hithium 16kWh", opts: ["h112s"] },
-  { g: "rack", label: "راكات", opts: ["m1", "m5", "h112s"] },
+  { g: "bat", label: "Hithium 16HV", opts: ["h112s"] },
+  { g: "rack", label: "راكات", opts: ["m1", "m5"] },
   { g: "cab", label: "كبائن", opts: ["cab261", "cab313", "cab112"] },
 ];
 const up = (x: number) => Math.ceil(x - 1e-9);
