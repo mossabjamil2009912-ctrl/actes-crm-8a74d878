@@ -691,7 +691,7 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
             <div className="flex flex-wrap gap-1">
               {inverterOptions(items as EqItem[], eq.need, eq.three).map((p) => (
                 <button key={p.key} type="button" onClick={() => pickInv(p)} className="rounded-lg border bg-card px-3 py-1.5 text-right text-xs hover:bg-muted">
-                  <div className="font-bold">{p.units > 1 ? `${p.units}× ` : ""}{p.kw} كيلو {p.hv ? "هاي فولتج" : p.three ? "ثري فاز" : "سنجل فاز"}</div>
+                  <div className="font-bold">{p.units > 1 ? `${p.units} × ` : ""}{p.kw}kw إنفرتر {p.hv ? "هاي فولتج" : p.three ? "ثري فاز" : "سنجل فاز"}</div>
                   <div className="text-muted-foreground">{usd(p.cost)}</div>
                 </button>
               ))}
