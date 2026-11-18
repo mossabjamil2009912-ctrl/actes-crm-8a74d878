@@ -1,5 +1,5 @@
 // Storage choice for High Voltage systems (50/80/125 kW): Hithium 112S racks (default), Pylontech M1/M5 racks,
-// or cabinets (Hithium 112C, Pylontech 261/313). Capacity = HV batteries × battery kWh (same as the old bot `rw.bat`).
+// or cabinets (Hithium 112C, Pylontech 261/313). Capacity = customer night kWh (daily × night%); falls back to HV batteries × battery kWh.
 // Ported 1:1 to the n8n State Machine as ACTES_STORAGE — change both together.
 import { F, type Formulas, type EqItem, type EqLine } from "@/lib/formulas";
 
