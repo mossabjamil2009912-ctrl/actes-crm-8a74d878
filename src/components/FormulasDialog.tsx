@@ -203,7 +203,7 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
             return <Ln l="عدد البطاريات">{hv ? <>الأكبر من<P>أقل عدد<O c="،" />{c}</P></> : c}</Ln>;
           })()}
           {hv && <>
-            <Nt>خيار 2 — راكات Pylontech: M1 إذا كفت حتى <V>{fx.m1MaxBat}</V> بطارية، وإلا M5 (التفاصيل في معادلتي M1 و M5 بالأسفل)</Nt>
+            <Nt>خيار 2 — راكات Pylontech M1 أو M5</Nt>
             <Nt>خيار 3 — كبائن التخزين (Hithium 112C · Pylontech 261 · Pylontech 313)</Nt>
             <Ln l="عدد الكبائن">أقرب عدد صحيح لـ<P><Fr n="السعة" d="سعة الكبينة" /></P></Ln>
             <Ln l="الفرق"><P>السعة<O c="−" />عدد الكبائن<O c="×" />سعة الكبينة</P></Ln>
@@ -227,9 +227,8 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
       {hv && <Eq n={++n + 1} title="صنف بطاريات وراك بايلونتك M1">
         <L>
           <Ln l={<>بطاريات <V>M1</V></>}>الأكبر من<P><V>{fx.m1MinBat}</V><O c="،" /><Fr n="السعة" d={<R>سعة <V>M1</V></R>} /></P></Ln>
-          <Nt>رينج M1: من <V>{fx.m1MinBat}</V> إلى <V>{fx.m1MaxBat}</V> بطارية (من {(fx.m1MinBat * fx.m1Kwh).toFixed(1)} إلى {(fx.m1MaxBat * fx.m1Kwh).toFixed(1)} كيلووات ساعة)</Nt>
-          <Ln l={<>راك <V>M1</V></>}>راك صغير إذا البطاريات ≤ <V>{fx.m1RackSmall}</V>، وإلا راك كبير ({fx.m1MaxBat})</Ln>
-          <Nt>راك واحد + كنترول واحد + طقم كابلات واحد · إذا زادت البطاريات عن {fx.m1MaxBat} ينتقل إلى M5</Nt>
+          <Ln l={<>عدد راكات <V>M1</V></>}><Ceil><Fr n={<R>بطاريات <V>M1</V></R>} d={<V>{fx.m1MaxBat}</V>} /></Ceil></Ln>
+          <Ln l="بطاريات كل راك"><Ceil><Fr n="البطاريات" d="عدد الراكات" /></Ceil></Ln>
         </L>
         <Num label="أقل عدد بطاريات M1" value={fx.m1MinBat} onChange={(v) => up({ m1MinBat: Math.round(v) })} />
         <Num label="سعة الراك الصغير M1 (بطارية)" value={fx.m1RackSmall} onChange={(v) => up({ m1RackSmall: Math.round(v) })} />
@@ -240,8 +239,6 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
           <Ln l={<>بطاريات <V>M5</V></>}>الأكبر من<P><V>{fx.m5MinBat}</V><O c="،" /><Fr n="السعة" d={<R>سعة <V>M5</V></R>} /></P></Ln>
           <Ln l={<>عدد راكات <V>M5</V></>}><Ceil><Fr n={<R>بطاريات <V>M5</V></R>} d={<V>{fx.m5MaxBat}</V>} /></Ceil></Ln>
           <Ln l="بطاريات كل راك"><Ceil><Fr n="البطاريات" d="عدد الراكات" /></Ceil></Ln>
-          <Nt>مقاس الراك: حتى <V>{fx.m5RackSmall}</V> → راك 11 · حتى <V>{fx.m5RackMedium}</V> → راك 16 · حتى <V>{fx.m5MaxBat}</V> → راك 20</Nt>
-          <Nt>مثال: 30 بطارية → 2 راك × 15 بطارية → راكين مقاس 16 · كنترول وطقم لكل راك</Nt>
         </L>
         <Num label="أقل عدد بطاريات M5" value={fx.m5MinBat} onChange={(v) => up({ m5MinBat: Math.round(v) })} />
         <Num label="سعة الراك الصغير M5 (بطارية)" value={fx.m5RackSmall} onChange={(v) => up({ m5RackSmall: Math.round(v) })} />
