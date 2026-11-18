@@ -12,6 +12,6 @@ describe("Pylontech racks", () => {
     expect(storageParts("pylon", 23 * D.m1Kwh, D)).toContainEqual(["RACK_M1C_23", 1]);
   });
   it("24 M1 batteries moves to M5", () => {
-    expect(storageParts("pylon", 24 * D.m1Kwh, D)![0][0]).toBe("BAT_PYLON_M5_15_68K");
+    expect(storageParts("pylon", 24 * D.m1Kwh, D)![0]?.[0]).toBe("BAT_PYLON_M5_15_68K");
   });
 });
