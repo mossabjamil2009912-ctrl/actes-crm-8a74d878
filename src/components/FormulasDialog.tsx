@@ -208,7 +208,7 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
         <Num label="سماحية نقص الليل (كيلووات ساعة)" value={fx.batTol} onChange={(v) => up({ batTol: v })} />
         {hv && <Num label="أقل عدد بطاريات هاي فولتج" value={fx.hvMinBat} onChange={(v) => up({ hvMinBat: Math.round(v) })} />}
       </Eq>
-      {hv && <Eq n={++n + 1} title="نظام التخزين (سؤال العميل)">
+      {hv && <Eq n={++n + 1} title="نظام التخزين">
         <L>
           <Nt>الخطوة 1 — السعة المطلوبة</Nt>
           <Ln l="السعة">استهلاك الليل</Ln>
