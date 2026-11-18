@@ -164,13 +164,9 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
       {need(fx, !single)}
       <Eq n={++n + 1} title="صنف الألواح الشمسية">
         <L>
-          <Ln l="إجمالي قدرة الألواح (كيلووات ذروة)"><Fr n="الاستهلاك اليومي" d="ساعات الإشعاع" /></Ln>
-          <Ln l="العدد الأولي"><Ceil><Fr n={<R>إجمالي قدرة الألواح<O c="×" /><V>1000</V></R>} d="قدرة اللوح" /></Ceil></Ln>
-          <Ln l="أقصى ألواح بالاسترنق"><Floor><Fr n="أقصى جهد الإنفرتر" d={<R><V>Voc</V><O c="×" />معامل الحرارة</R>} /></Floor></Ln>
-          <Ln l="عدد الاسترنقات"><Ceil><Fr n="العدد الأولي" d="أقصى ألواح بالاسترنق" /></Ceil></Ln>
-          <Ln l="ألواح كل استرنق"><Ceil><Fr n="العدد الأولي" d="عدد الاسترنقات" /></Ceil></Ln>
-          <Ln l="الألواح النهائية">عدد الاسترنقات<O c="×" />ألواح كل استرنق</Ln>
-          <Nt>الأعداد تُقرَّب للأعلى، وأقصى ألواح بالاسترنق يُقرَّب للأسفل</Nt>
+          <Ln l="إجمالي عدد الألواح"><Ceil><Fr n={<R>الاستهلاك اليومي<O c="×" /><V>1000</V></R>} d={<R>ساعات الإشعاع<O c="×" />قدرة اللوح</R>} /></Ceil></Ln>
+          <Ln l="سعة الاسترنق (أقصى ألواح بالسلسلة)"><Floor><Fr n="أقصى جهد الإنفرتر" d={<R><V>Voc</V><O c="×" />معامل الحرارة</R>} /></Floor></Ln>
+          <Nt>تُوزَّع الألواح بالتساوي على الاسترنقات مع التقريب للأعلى</Nt>
         </L>
         <Num label="ساعات الإشعاع اليومي" value={fx.sun} onChange={(v) => up({ sun: v })} />
         <Num label="قدرة اللوح (واط)" value={fx.panelW} onChange={(v) => up({ panelW: v })} />
@@ -268,11 +264,12 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
       </Eq>}
       <Eq n={++n + 1} title={hv ? "صنف صناديق حماية DC (1500V)" : "صنف صندوق حماية DC"}>
         <L>
-          <Ln l="عدد الصناديق"><Ceil><Fr n="الاسترنقات" d="أقصى خطوط الصندوق" /></Ceil></Ln>
-          <Ln l="خطوط الصندوق"><Ceil><Fr n="الاسترنقات" d={<R>الصناديق<O c="×" />خطوة التقريب</R>} /></Ceil><O c="×" />خطوة التقريب</Ln>
+          <Ln l="عدد الصناديق"><Ceil><Fr n="عدد الاسترنقات" d="أقصى خطوط الصندوق" /></Ceil></Ln>
+          <Ln l="خطوط الصندوق"><Fr n="عدد الاسترنقات" d="عدد الصناديق" /></Ln>
+          <Nt>تُقرَّب خطوط الصندوق لأقرب مقاس زوجي أعلى: 2 · 4 · 6 · 8 · 10</Nt>
         </L>
-        <Num label="أقصى عدد خطوط للصندوق" value={fx.dcMaxLines} onChange={(v) => up({ dcMaxLines: v })} />
-        <Num label="خطوة التقريب (خطوط)" value={fx.dcStep} onChange={(v) => up({ dcStep: v })} />
+        <Num label="أقصى خطوط للصندوق الواحد" value={fx.dcMaxLines} onChange={(v) => up({ dcMaxLines: v })} />
+        <Num label="تدرج مقاسات الصناديق (خطوط)" value={fx.dcStep} onChange={(v) => up({ dcStep: v })} />
       </Eq>
       <Eq n={++n + 1} title="صنف لوحة AC / لوحة التجميع">
         <L>
