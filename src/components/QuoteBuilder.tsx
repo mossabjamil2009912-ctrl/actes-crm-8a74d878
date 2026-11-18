@@ -10,7 +10,7 @@ import { BOT_PRESETS } from "@/lib/bot-presets";
 import { F, applyFormulas, comKey } from "@/lib/formulas";
 import { inverterOptions, inverterForLoad, buildSystem, type InvPick } from "@/lib/sizing";
 import { lvChoices, lvCatalogItem, lvBatOf, LV_BAT_LABELS, type LvBatOpt } from "@/lib/lv-battery";
-import { applyStorage, hvCapacity, storageAvailable, STORAGE_LABELS, type StorageChoice } from "@/lib/storage";
+import { applyStorage, hvCapacity, storageAvailable, STORAGE_LABELS, STORAGE_GROUPS, type StorageChoice, type StorageGroup } from "@/lib/storage";
 import logoClean from "@/assets/actes-logo-clean.png";
 
 type Row = Awaited<ReturnType<typeof listCatalog>>[number];
@@ -431,6 +431,7 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
   const [loadKw, setLoadKw] = useState("");
   const [hvBase, setHvBase] = useState<Line[] | null>(null); // HV system before the storage choice
   const [storage, setStorage] = useState<StorageChoice>("h112s");
+  const [stGroup, setStGroup] = useState<StorageGroup>("bat");
   const [nightNeed, setNightNeed] = useState<number | null>(null); // customer night kWh — cabinets/Pylontech compare to this
   const getKwh = useServerFn(getKwhPrice);
   const saveKwh = useServerFn(setKwhPrice);
@@ -622,7 +623,7 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
     if (!out.length) return setMsg("أصناف هذه المنظومة غير متوفرة في قائمة الأصناف");
     const t = p.type ?? "res", full = withAuto(applyEquations(out, items as EqItem[], catalogKeyFor), t, new Set());
     setQuoteType(t); setDismissed(new Set());
-    setHvBase(hvCapacity(full, items as EqItem[]) > 0 ? full : null); setStorage("h112s");
+    setHvBase(hvCapacity(full, items as EqItem[]) > 0 ? full : null); setStorage("h112s"); setStGroup("bat");
     setLines(Object.fromEntries(full.map((l) => [l.key, l])));
     setShowHist(false);
     void generate(full);
@@ -736,11 +737,18 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
         {hvBase && (
           <div className="rounded-xl border border-primary/30 bg-card p-2">
             <div className="mb-1 text-xs font-bold">اختر نظام تخزين الطاقة:</div>
+            {(() => { const cap = nightNeed ?? hvCapacity(hvBase, items as EqItem[]); const groups = STORAGE_GROUPS.map((g) => ({ ...g, opts: g.opts.filter((c) => storageAvailable(c, cap)) })).filter((g) => g.opts.length); const cur = groups.find((g) => g.g === stGroup) ?? groups[0]; return (<>
             <div className="flex flex-wrap gap-1">
-              {(Object.keys(STORAGE_LABELS) as StorageChoice[]).filter((c) => storageAvailable(c, nightNeed ?? hvCapacity(hvBase, items as EqItem[]))).map((c) => (
-                <button key={c} type="button" onClick={() => pickStorage(c)} aria-pressed={storage === c} className={`rounded-lg border px-2 py-1 text-xs font-semibold ${storage === c ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted"}`}>{storage === c ? "✓ " : ""}{STORAGE_LABELS[c]}</button>
+              {groups.map((g) => (
+                <button key={g.g} type="button" onClick={() => { setStGroup(g.g); if (g.opts.length === 1 || g.g === "bat") pickStorage(g.opts[0]!); }} aria-pressed={cur?.g === g.g} className={`rounded-lg border px-2 py-1 text-xs font-semibold ${cur?.g === g.g ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-muted"}`}>{cur?.g === g.g ? "✓ " : ""}{g.label}</button>
               ))}
             </div>
+            {cur && cur.g !== "bat" && <div className="mt-1 flex flex-wrap gap-1 border-t pt-1">
+              {cur.opts.map((c) => (
+                <button key={c} type="button" onClick={() => pickStorage(c)} aria-pressed={storage === c} className={`rounded-lg border px-2 py-1 text-xs font-semibold ${storage === c ? "border-primary bg-primary/15" : "bg-card hover:bg-muted"}`}>{storage === c ? "✓ " : ""}{STORAGE_LABELS[c]}</button>
+              ))}
+            </div>}
+            </>); })()}
           </div>
         )}
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-5">

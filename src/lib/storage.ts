@@ -5,8 +5,15 @@ import { F, type Formulas, type EqItem, type EqLine } from "@/lib/formulas";
 
 export type StorageChoice = "h112s" | "pylon" | "cab112" | "cab261" | "cab313";
 export const STORAGE_LABELS: Record<StorageChoice, string> = {
-  h112s: "راكات Hithium 112S", pylon: "راكات Pylontech", cab112: "كبينة Hithium 112C", cab261: "كبينة Pylontech 261", cab313: "كبينة Pylontech 313",
+  h112s: "Hithium", pylon: "Pylontech (M1 / M5)", cab112: "Hithium 112C", cab261: "Pylontech 261", cab313: "Pylontech 313",
 };
+// Customer picks a group first, then a model inside it.
+export type StorageGroup = "bat" | "rack" | "cab";
+export const STORAGE_GROUPS: { g: StorageGroup; label: string; opts: StorageChoice[] }[] = [
+  { g: "bat", label: "Hithium 16kWh", opts: ["h112s"] },
+  { g: "rack", label: "راكات", opts: ["pylon", "h112s"] },
+  { g: "cab", label: "كبائن", opts: ["cab261", "cab313", "cab112"] },
+];
 const up = (x: number) => Math.ceil(x - 1e-9);
 
 // Cabinets are offered only when the capacity is within ± cabTol of a whole number of cabinets.
