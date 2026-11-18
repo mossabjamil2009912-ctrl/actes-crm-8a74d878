@@ -268,8 +268,8 @@ const lineRank = (l: { key: string; name: string }, cat?: string) => {
   const i = cat ? LINE_ORDER.indexOf(cat) : -1;
   return i < 0 ? 99 : i;
 };
-export const orderLines = <T extends { key: string; name: string }>(ls: T[], catOf: (k: string) => string | undefined): T[] =>
-  ls.map((l, i) => ({ l, i, r: lineRank(l, catOf(l.key)) })).sort((a, b) => a.r - b.r || a.i - b.i).map((x) => x.l);
+export const orderLines = <T extends { key: string; name: string }>(ls: T[], catOf: (l: T) => string | undefined): T[] =>
+  ls.map((l, i) => ({ l, i, r: lineRank(l, catOf(l)) })).sort((a, b) => a.r - b.r || a.i - b.i).map((x) => x.l);
 
 function quoteBody(no: string, cust: { name: string; phone: string; city: string }, lines: Line[], notes: string) {
   const total = lines.reduce((s, l) => s + l.price * l.qty, 0);
@@ -467,7 +467,8 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
     return m;
   }, [items]);
   const list = (active === "custom" ? [] : byCat[active] ?? []).filter((r) => !q || (r.name + r.key).toLowerCase().includes(q.toLowerCase()));
-  const chosen = orderLines(Object.values(lines), (k) => items.find((r) => r.key === k)?.category);
+  const catOfLine = (l: Line) => { const k = items.some((r) => r.key === l.key) ? l.key : catalogKeyFor(l); return items.find((r) => r.key === k)?.category; };
+  const chosen = orderLines(Object.values(lines), catOfLine);
   const total = chosen.reduce((s, l) => s + l.price * l.qty, 0);
   const countIn = (k: string) => chosen.filter((l) => (k === "custom" ? l.key.startsWith("CUSTOM_") : byCat[k]?.some((r) => r.key === l.key))).length;
 
@@ -524,7 +525,7 @@ export function QuoteBuilder({ pw, initialCustomerId }: { pw: string; initialCus
   const [preview, setPreview] = useState<{ url: string; name: string; html: string } | null>(null);
   const generate = async (src: Line[] = chosen) => {
     if (!src.length) return setMsg("اختر صنفا واحدا على الأقل");
-    src = orderLines(src, (k) => items.find((r) => r.key === k)?.category);
+    src = orderLines(src, catOfLine);
     setBusy(true); setMsg("جارٍ إنشاء ملف PDF...");
     try {
       const num = no ?? "ACTES-Q-" + Date.now().toString().slice(-6);
