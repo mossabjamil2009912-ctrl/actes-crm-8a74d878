@@ -186,7 +186,6 @@ export function FormulasDialog({ pw, code, onClose }: { pw: string; code: string
           <Ln l="عدد الإنفرترات"><Ceil><Fr n="القدرة المطلوبة" d="قدرة الإنفرتر" /></Ceil></Ln>
           <Nt>عدد الإنفرترات لا يتجاوز الحد الأقصى بالتوازي</Nt>
           <Nt>{hv ? "يُستخدم الهاي فولتج عندما تتجاوز القدرة حد الجهد المنخفض" : "جهد منخفض ما دامت القدرة ≤ حد الجهد المنخفض"}</Nt>
-          <Nt>يُختار الأرخص من الخيارات المناسبة</Nt>
         </L>
         <Num label="نسبة الألواح إلى الإنفرتر (دايا)" value={fx.dcRatio} onChange={(v) => up({ dcRatio: v })} />
         <Num label="نسبة الألواح إلى الإنفرتر (سوليس)" value={fx.dcRatioSolis} onChange={(v) => up({ dcRatioSolis: v })} />
