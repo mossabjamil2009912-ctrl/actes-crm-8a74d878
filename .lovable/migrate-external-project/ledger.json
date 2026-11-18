@@ -32,14 +32,14 @@
   "source": "single dashboard password DASHBOARD_PASSWORD",
   "outcome": "keep",
   "status": "pending",
-  "next_action": "user enters DASHBOARD_PASSWORD secret"
+  "next_action": "secret saved; user signs in once to confirm"
  },
  {
   "capability": "n8n bot endpoints",
   "source": "/api/public/bot-* guarded by BOT_INGEST_SECRET",
   "outcome": "keep",
   "status": "pending",
-  "next_action": "user enters BOT_INGEST_SECRET; publish; point n8n at the published URL"
+  "next_action": "secret saved, endpoints reject unsigned calls (401); publish and point n8n here at cutover"
  },
  {
   "capability": "github backup job",
