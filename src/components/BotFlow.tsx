@@ -63,10 +63,8 @@ function Field({ row, saved, onSave, del }: { row: T; saved: { value: string | n
 }
 
 // Residential quote path as the customer sees it: 7 stations, each with its message parts and buttons.
-const WELCOME = { title: "الترحيب والقائمة الرئيسية", msg: ["f35f719b73ece2bc", "31ba78db5027da72"], btns: ["17a354adfca34ed9", "9256f0715d87b034"] };
+const WELCOME = { title: "الترحيب والقائمة الرئيسية", msg: ["31ba78db5027da72", "08d5f3105337be53", "wel0services0ask"], btns: ["17a354adfca34ed9", "9256f0715d87b034"] };
 const RES_TREE: { title: string; msg: string[]; btns: string[]; fixed?: string[]; note?: string }[] = [
-  WELCOME,
-  { title: "اختيار نوع المنظومة", msg: ["5f3a5397b45b53d7", "43496107d13ca096"], btns: ["3e8021ccc9fdb708", "be0ff08827145be4", "dff2de3b794789b3"] },
   { title: "طلب قيمة الفاتورة الشهرية", msg: ["25241f77f16c8dc4"], btns: ["b475509fe976959b", "49e61614093c2a7f"] },
   { title: "نمط الاستخدام (نهار / ليل)", msg: ["14396d9b58cf5304", "0ded4780a60eaa29"], btns: ["2b18ee871f40b0fd", "ac0b2da7a98be976", "49e61614093c2a7f"] },
   { title: "اختيار نوع البطارية", msg: [], fixed: ["UF5000 5.12kWh", "Fidus Pro 5.12kWh"], btns: ["49e61614093c2a7f"], note: "اسما البطاريتين يأتيان من شاشة الأصناف." },
@@ -75,8 +73,6 @@ const RES_TREE: { title: string; msg: string[]; btns: string[]; fixed?: string[]
 ];
 // Commercial quote path (approved plan): stations with their harvested message parts and buttons.
 const COM_TREE: typeof RES_TREE = [
-  WELCOME,
-  { title: "اختيار نوع المنظومة", msg: ["5f3a5397b45b53d7", "43496107d13ca096"], btns: ["3e8021ccc9fdb708", "be0ff08827145be4", "dff2de3b794789b3"] },
   { title: "طريقة إدخال الاستهلاك", msg: ["f59fc2fbde4d4139"], btns: ["bc6b06e11dd584c3", "da5bde195f4ac7d9", "87da7c0b23278abf", "49e61614093c2a7f"] },
   { title: "إدخال قيمة الاستهلاك", msg: ["2e0057c20a9e6656", "75e9f26980fc0454", "769ebb2a960c6fd9"], btns: ["49e61614093c2a7f"], note: "بعدها يتفرع المسار حسب الاستهلاك: جهد منخفض أو جهد عالي." },
 ];
@@ -94,8 +90,6 @@ const COM_LV = comBranch(true);
 const COM_HV = comBranch(false);
 // Industrial quote path (approved plan): 14 stations.
 const IND_TREE: typeof RES_TREE = [
-  WELCOME,
-  { title: "اختيار نوع المنظومة", msg: ["5f3a5397b45b53d7", "43496107d13ca096"], btns: ["3e8021ccc9fdb708", "be0ff08827145be4", "dff2de3b794789b3"] },
   { title: "اسم المشروع أو المصنع", msg: ["04213971b6cd422a", "fe05d8c84f2b5a7a", "08cebc7cf6b7a18c"], btns: ["49e61614093c2a7f"] },
   { title: "موقع المشروع", msg: [], btns: ["49e61614093c2a7f"], note: "قائمة المحافظات ثابتة داخل البوت." },
   { title: "نوع النشاط الصناعي", msg: ["db015be4d9a89414", "90a0001df342e6f5", "a442fa39b3a2da6d"], btns: ["3e809abae64270ea", "be3a2d01c8055d81", "74a57aa64db81928", "855e5bd69a46e5e3", "13d94cd6486d3049", "49b560f99302689e", "66514b1009d0fbb3"] },
@@ -112,7 +106,9 @@ const IND_TREE: typeof RES_TREE = [
 ];
 const BY_KEY = new Map(TEXTS.map((r) => [r.k, r]));
 // Non-quote tabs: only the steps a customer really goes through (verified by replaying the live State Machine).
-const WEL_TREE: typeof RES_TREE = [WELCOME];
+const WEL_TREE: typeof RES_TREE = [WELCOME,
+  { title: "اختيار نوع المنظومة", msg: ["5f3a5397b45b53d7", "43496107d13ca096"], btns: ["3e8021ccc9fdb708", "be0ff08827145be4", "dff2de3b794789b3"] },
+];
 const BUY_TREE: typeof RES_TREE = [
   { title: "اسم العميل للفاتورة", msg: ["20ce95407d5f0f88", "765f164192b1dba9"], btns: ["49e61614093c2a7f"] },
   { title: "اختيار طريقة الدفع", msg: ["0fadd3651818e5c7", "cc70f278995c9715"], btns: ["6c50ec49c447b00e", "d196ecc6637e223b", "2a6a4589be9b2412"] },
@@ -258,7 +254,7 @@ export function BotFlow({ pw }: { pw: string }) {
             {([[COM_LV, "أ", "الجهد المنخفض (LV)", "حتى 20kW"], [COM_HV, "ب", "الجهد العالي (HV)", "أكبر من 20kW"]] as const).map(([tr, m, t, sub]) => (
               <div key={m} className="space-y-3 rounded-lg border bg-muted/20 p-2">
                 <div className="flex items-center gap-2 rounded-md bg-secondary px-3 py-2 text-secondary-foreground"><Zap className="h-4 w-4" /><b className="flex-1 text-sm">{t}</b><span className="text-xs text-muted-foreground">{sub}</span></div>
-                <Tree tree={tr} start={4} mark={m} saved={saved} onSave={onSave} onDel={onDel} />
+                <Tree tree={tr} start={2} mark={m} saved={saved} onSave={onSave} onDel={onDel} />
               </div>
             ))}
           </div>
