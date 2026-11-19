@@ -105,7 +105,7 @@ const sectionTree = (secs: string[]): typeof RES_TREE => {
   return [...g.values()].map((rs) => {
     const msg = rs.filter((r) => r.t !== "b").map((r) => r.k);
     const btns = rs.filter((r) => r.t === "b").map((r) => r.k);
-    const first = (rs.find((r) => r.t !== "b") ?? rs[0]).o.replace(/[*_]/g, "").trim().split("\n")[0];
+    const first = ((rs.find((r) => r.t !== "b") ?? rs[0])?.o ?? "").replace(/[*_]/g, "").trim().split("\n")[0] ?? "";
     return { title: first.length > 40 ? first.slice(0, 40) + "…" : first || "رسالة", msg, btns };
   });
 };
