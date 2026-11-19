@@ -26,6 +26,7 @@ import { Route as ApiPublicBotReportRequestRouteImport } from './routes/api/publ
 import { Route as ApiPublicBotTicketRouteImport } from './routes/api/public/bot-ticket'
 import { Route as ApiPublicCrmMediaRouteImport } from './routes/api/public/crm-media'
 import { Route as ApiPublicDesktopAppRouteImport } from './routes/api/public/desktop-app'
+import { Route as ApiPublicHeaderImageRouteImport } from './routes/api/public/header-image'
 import { Route as ApiPublicJobsGithubBackupRouteImport } from './routes/api/public/jobs/github-backup'
 
 const IndexRoute = IndexRouteImport.update({
@@ -114,6 +115,11 @@ const ApiPublicDesktopAppRoute = ApiPublicDesktopAppRouteImport.update({
   path: '/api/public/desktop-app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHeaderImageRoute = ApiPublicHeaderImageRouteImport.update({
+  id: '/api/public/header-image',
+  path: '/api/public/header-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicJobsGithubBackupRoute =
   ApiPublicJobsGithubBackupRouteImport.update({
     id: '/api/public/jobs/github-backup',
@@ -139,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/api/public/bot-ticket': typeof ApiPublicBotTicketRoute
   '/api/public/crm-media': typeof ApiPublicCrmMediaRoute
   '/api/public/desktop-app': typeof ApiPublicDesktopAppRoute
+  '/api/public/header-image': typeof ApiPublicHeaderImageRoute
   '/api/public/jobs/github-backup': typeof ApiPublicJobsGithubBackupRoute
 }
 export interface FileRoutesByTo {
@@ -159,6 +166,7 @@ export interface FileRoutesByTo {
   '/api/public/bot-ticket': typeof ApiPublicBotTicketRoute
   '/api/public/crm-media': typeof ApiPublicCrmMediaRoute
   '/api/public/desktop-app': typeof ApiPublicDesktopAppRoute
+  '/api/public/header-image': typeof ApiPublicHeaderImageRoute
   '/api/public/jobs/github-backup': typeof ApiPublicJobsGithubBackupRoute
 }
 export interface FileRoutesById {
@@ -180,6 +188,7 @@ export interface FileRoutesById {
   '/api/public/bot-ticket': typeof ApiPublicBotTicketRoute
   '/api/public/crm-media': typeof ApiPublicCrmMediaRoute
   '/api/public/desktop-app': typeof ApiPublicDesktopAppRoute
+  '/api/public/header-image': typeof ApiPublicHeaderImageRoute
   '/api/public/jobs/github-backup': typeof ApiPublicJobsGithubBackupRoute
 }
 export interface FileRouteTypes {
@@ -202,6 +211,7 @@ export interface FileRouteTypes {
     | '/api/public/bot-ticket'
     | '/api/public/crm-media'
     | '/api/public/desktop-app'
+    | '/api/public/header-image'
     | '/api/public/jobs/github-backup'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/api/public/bot-ticket'
     | '/api/public/crm-media'
     | '/api/public/desktop-app'
+    | '/api/public/header-image'
     | '/api/public/jobs/github-backup'
   id:
     | '__root__'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/api/public/bot-ticket'
     | '/api/public/crm-media'
     | '/api/public/desktop-app'
+    | '/api/public/header-image'
     | '/api/public/jobs/github-backup'
   fileRoutesById: FileRoutesById
 }
@@ -262,6 +274,7 @@ export interface RootRouteChildren {
   ApiPublicBotTicketRoute: typeof ApiPublicBotTicketRoute
   ApiPublicCrmMediaRoute: typeof ApiPublicCrmMediaRoute
   ApiPublicDesktopAppRoute: typeof ApiPublicDesktopAppRoute
+  ApiPublicHeaderImageRoute: typeof ApiPublicHeaderImageRoute
   ApiPublicJobsGithubBackupRoute: typeof ApiPublicJobsGithubBackupRoute
 }
 
@@ -386,6 +399,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicDesktopAppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/header-image': {
+      id: '/api/public/header-image'
+      path: '/api/public/header-image'
+      fullPath: '/api/public/header-image'
+      preLoaderRoute: typeof ApiPublicHeaderImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/jobs/github-backup': {
       id: '/api/public/jobs/github-backup'
       path: '/api/public/jobs/github-backup'
@@ -423,6 +443,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicBotTicketRoute: ApiPublicBotTicketRoute,
   ApiPublicCrmMediaRoute: ApiPublicCrmMediaRoute,
   ApiPublicDesktopAppRoute: ApiPublicDesktopAppRoute,
+  ApiPublicHeaderImageRoute: ApiPublicHeaderImageRoute,
   ApiPublicJobsGithubBackupRoute: ApiPublicJobsGithubBackupRoute,
 }
 export const routeTree = rootRouteImport

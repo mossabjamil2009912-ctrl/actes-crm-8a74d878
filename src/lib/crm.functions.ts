@@ -801,3 +801,30 @@ export const saveFormulas = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { formulas: f };
   });
+
+// Bot message header image: stored in crm-attachments, path + version in app_settings key `header_image`.
+export const getHeaderImage = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ pw: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    check(data.pw);
+    const { supabaseAdmin } = await import("@/lib/db.server");
+    const { data: r } = await supabaseAdmin.from("app_settings").select("text_value").eq("key", "header_image").maybeSingle();
+    let v = "2";
+    try { v = String(JSON.parse(r?.text_value ?? "{}").v ?? "2"); } catch { /* default */ }
+    return { url: `/api/public/header-image?v=${v}` };
+  });
+
+export const saveHeaderImage = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ pw: z.string(), b64: z.string().max(12_000_000), mime: z.enum(["image/jpeg", "image/png"]) }).parse(d))
+  .handler(async ({ data }) => {
+    check(data.pw);
+    const { supabaseAdmin } = await import("@/lib/db.server");
+    const bin = Uint8Array.from(atob(data.b64), (ch) => ch.charCodeAt(0));
+    const v = String(Date.now());
+    const path = `header-image/${v}.${data.mime === "image/png" ? "png" : "jpg"}`;
+    const up = await supabaseAdmin.storage.from("crm-attachments").upload(path, bin, { contentType: data.mime });
+    if (up.error) throw new Error("تعذّر رفع الصورة");
+    const { error } = await supabaseAdmin.from("app_settings").upsert({ key: "header_image", value: 0, text_value: JSON.stringify({ path, v, mime: data.mime }), updated_at: new Date().toISOString() });
+    if (error) throw new Error(error.message);
+    return { url: `/api/public/header-image?v=${v}` };
+  });

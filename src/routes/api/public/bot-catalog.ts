@@ -51,7 +51,11 @@ export const Route = createFileRoute("/api/public/bot-catalog")({
           const edited = BOT_TEXTS.BTN.find((b) => b[0] === s.trigger_id && b[1] === s.trigger_title)?.[2];
           return { ...s, trigger_titles: [s.trigger_title, edited].filter(Boolean) };
         });
-        return Response.json({ settings: { kwh_price }, KWH_PRICE: kwh_price, updated_at: new Date().toISOString(), ITEM_PRICES: prices, ITEMS: items, CATALOG_FILES: files, AUTO_RULES: autoRules, BOT_TEXTS, BOT_STEPS, FORMULAS });
+        const { data: hi } = await supabaseAdmin.from("app_settings").select("text_value").eq("key", "header_image").maybeSingle();
+        let hv = "2";
+        try { hv = String(JSON.parse(hi?.text_value ?? "{}").v ?? "2"); } catch { hv = "2"; }
+        const HEADER_IMAGE_URL = `${origin}/api/public/header-image?v=${hv}`;
+        return Response.json({ HEADER_IMAGE_URL, settings: { kwh_price }, KWH_PRICE: kwh_price, updated_at: new Date().toISOString(), ITEM_PRICES: prices, ITEMS: items, CATALOG_FILES: files, AUTO_RULES: autoRules, BOT_TEXTS, BOT_STEPS, FORMULAS });
       },
     },
   },

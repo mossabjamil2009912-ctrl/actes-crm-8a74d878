@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Save, RotateCcw, ChevronDown, MessageSquareText, Check, MousePointerClick, Trash2 } from "lucide-react";
 import { listBotTexts, saveBotText } from "@/lib/crm.functions";
-import { Home, Store, Factory, Zap, Hand, ShoppingCart, Sun, Network } from "lucide-react";
+import { Home, Store, Factory, Zap, Hand, ShoppingCart, Sun, Network, ImageIcon } from "lucide-react";
+import { HeaderImage } from "@/components/HeaderImage";
 import { offlineQuery } from "@/lib/offline-cache";
 import ALL from "@/lib/bot-texts.json";
 
@@ -207,13 +208,13 @@ export function BotFlow({ pw }: { pw: string }) {
   const list = useServerFn(listBotTexts);
   const saveFn = useServerFn(saveBotText);
   const { data: rows = [], refetch } = useQuery(offlineQuery({ queryKey: ["bot-texts"], queryFn: () => list({ data: { pw } }) }));
-  const [sys, setSys] = useState<"wel" | "res" | "com" | "ind" | "buy" | "pvs" | "sld">("wel");
+  const [sys, setSys] = useState<"wel" | "res" | "com" | "ind" | "buy" | "pvs" | "sld" | "img">("wel");
   const saved = useMemo(() => new Map(rows.map((r) => [r.key, r])), [rows]);
   const onSave: SaveFn = (k) => async (value, desc_value) => {
     await saveFn({ data: { pw, key: k, value, desc_value } });
     await refetch();
   };
-  const TABS = [["wel", "الترحيبية", Hand], ["res", "السكني", Home], ["com", "التجاري", Store], ["ind", "الصناعي", Factory], ["buy", "متابعة الشراء", ShoppingCart], ["pvs", "PVsyst", Sun], ["sld", "SLD", Network]] as const;
+  const TABS = [["wel", "الترحيبية", Hand], ["res", "السكني", Home], ["com", "التجاري", Store], ["ind", "الصناعي", Factory], ["buy", "متابعة الشراء", ShoppingCart], ["pvs", "PVsyst", Sun], ["sld", "SLD", Network], ["img", "صورة الترويسة", ImageIcon]] as const;
 
   return (
     <div dir="rtl" className="mx-auto max-w-4xl space-y-4 p-3">
@@ -221,7 +222,7 @@ export function BotFlow({ pw }: { pw: string }) {
         <h2 className="text-lg font-bold text-foreground">مسار البوت</h2>
         <p className="text-sm text-muted-foreground">اضغط على أي خطوة لتعديل رسالتها وأسماء أزرارها، ثم اضغط حفظ. اضغط مطولاً على أي زر أو عنوان خطوة لحذفه — يصل التعديل للبوت من الرسالة التالية.</p>
       </div>
-      <div className="grid grid-cols-4 gap-1 rounded-xl sm:grid-cols-7 border bg-muted p-1">
+      <div className="grid grid-cols-4 gap-1 rounded-xl sm:grid-cols-8 border bg-muted p-1">
         {TABS.map(([id, t, I]) => (
           <button key={id} onClick={() => setSys(id)} className={`flex items-center justify-center gap-1.5 rounded-lg px-1 py-2 text-xs font-bold transition ${sys === id ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}><I className="h-4 w-4" />{t}</button>
         ))}
@@ -232,6 +233,7 @@ export function BotFlow({ pw }: { pw: string }) {
         {sys === "buy" && <Tree tree={BUY_TREE} saved={saved} onSave={onSave} />}
         {sys === "pvs" && <Tree tree={PVS_TREE} saved={saved} onSave={onSave} />}
         {sys === "sld" && <Tree tree={SLD_TREE} saved={saved} onSave={onSave} />}
+        {sys === "img" && <HeaderImage pw={pw} />}
         {sys === "ind" && <Tree tree={IND_TREE} saved={saved} onSave={onSave} />}
         {sys === "com" && <Fragment>
           <Tree tree={COM_TREE} saved={saved} onSave={onSave} />
