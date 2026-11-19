@@ -28,4 +28,4 @@
 - [x] Connect GitHub API and n8n (Nov 18)
 - [ ] Publish and point n8n at the published address (blocked: user publishes)
 
-- [ ] Reconnect GitHub API and n8n in new workspace
+- [x] Reconnect GitHub API and n8n (Nov 19)
