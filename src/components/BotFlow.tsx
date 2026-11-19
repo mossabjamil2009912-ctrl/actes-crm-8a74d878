@@ -49,28 +49,31 @@ function Field({ row, saved, onSave }: { row: T; saved: { value: string | null; 
 }
 
 // Residential quote path as the customer sees it: 7 stations, each with its message parts and buttons.
-const RES_TREE: { title: string; msg: string[]; btns: string[]; note?: string }[] = [
+const WELCOME = { title: "الترحيب والقائمة الرئيسية", msg: ["f35f719b73ece2bc", "31ba78db5027da72"], btns: ["17a354adfca34ed9", "9256f0715d87b034"] };
+const RES_TREE: { title: string; msg: string[]; btns: string[]; fixed?: string[]; note?: string }[] = [
+  WELCOME,
   { title: "اختيار نوع المنظومة", msg: ["5f3a5397b45b53d7", "43496107d13ca096"], btns: ["3e8021ccc9fdb708", "be0ff08827145be4", "dff2de3b794789b3"] },
-  { title: "طلب قيمة الفاتورة الشهرية", msg: ["25241f77f16c8dc4"], btns: ["b475509fe976959b"] },
+  { title: "طلب قيمة الفاتورة الشهرية", msg: ["25241f77f16c8dc4"], btns: ["b475509fe976959b", "49e61614093c2a7f"] },
   { title: "نمط الاستخدام (نهار / ليل)", msg: ["14396d9b58cf5304", "0ded4780a60eaa29"], btns: ["2b18ee871f40b0fd", "ac0b2da7a98be976", "49e61614093c2a7f"] },
-  { title: "اختيار نوع البطارية", msg: [], btns: ["49e61614093c2a7f"], note: "أسماء البطاريات (UF5000 / Fidus Pro) تأتي من الأصناف — عدّلها من شاشة الأصناف." },
+  { title: "اختيار نوع البطارية", msg: [], fixed: ["UF5000 5.12kWh", "Fidus Pro 5.12kWh"], btns: ["49e61614093c2a7f"], note: "اسما البطاريتين يأتيان من شاشة الأصناف." },
   { title: "ملخص المنظومة المقترحة", msg: ["c70260d1503cbd9e", "2eaea7b9b7d0c673"], btns: ["9d7fbbbf88df922f", "49e61614093c2a7f"] },
   { title: "إدخال اسم العميل", msg: ["1b9f2bd45379d795"], btns: ["49e61614093c2a7f"], note: "زر «الاسم المسجل سابقاً» يظهر تلقائياً باسم العميل." },
   { title: "خيارات ما بعد عرض السعر", msg: [], btns: ["484bf23e3dd44054", "8a500db8ddc7b809", "8bb17c0836d361db", "49e61614093c2a7f"] },
 ];
 // Commercial quote path (approved plan): stations with their harvested message parts and buttons.
 const COM_TREE: typeof RES_TREE = [
+  WELCOME,
   { title: "اختيار نوع المنظومة", msg: ["5f3a5397b45b53d7", "43496107d13ca096"], btns: ["3e8021ccc9fdb708", "be0ff08827145be4", "dff2de3b794789b3"] },
   { title: "طريقة إدخال الاستهلاك", msg: ["f59fc2fbde4d4139"], btns: ["bc6b06e11dd584c3", "da5bde195f4ac7d9", "87da7c0b23278abf", "49e61614093c2a7f"] },
   { title: "إدخال قيمة الاستهلاك", msg: ["2e0057c20a9e6656", "75e9f26980fc0454", "769ebb2a960c6fd9"], btns: ["49e61614093c2a7f"], note: "بعدها يتفرع المسار حسب الاستهلاك: جهد منخفض أو جهد عالي." },
 ];
 const comBranch = (lv: boolean): typeof RES_TREE => [
-  { title: "طريقة تحديد الإنفرتر", msg: [], btns: ["49e61614093c2a7f"], note: "رسالة وأزرار «الحمل في الساعة / اختيار الإنفرتر» ثابتة داخل البوت حالياً." },
+  { title: "طريقة تحديد الإنفرتر", msg: [], fixed: ["الحمل في الساعة", "اختيار الإنفرتر"], btns: ["49e61614093c2a7f"] },
   { title: lv ? "اختيار قدرة الإنفرتر (6–20 kW)" : "اختيار قدرة الإنفرتر (30–125 kW)", msg: ["0069cb23b5a0ae8a", "a2cf5ae56ed8224f"], btns: ["49e61614093c2a7f"], note: "قائمة القدرات تُبنى تلقائياً من الأصناف." },
   { title: "نمط الاستخدام", msg: ["14396d9b58cf5304", "0ded4780a60eaa29"], btns: ["77d0b52a0182f3a2", "2b18ee871f40b0fd", "ac0b2da7a98be976", "49e61614093c2a7f"] },
   lv
-    ? { title: "اختيار نوع البطارية", msg: [], btns: ["49e61614093c2a7f"], note: "Hithium 16kWh / Fidus 16kWh — الأسماء من شاشة الأصناف." }
-    : { title: "اختيار نظام التخزين والكبائن", msg: [], btns: ["49e61614093c2a7f"], note: "راكات Hithium 112S / Pylontech / كبائن — الأسماء من شاشة الأصناف." },
+    ? { title: "اختيار نوع البطارية", msg: [], fixed: ["Hithium 16kWh", "Fidus 16kWh"], btns: ["49e61614093c2a7f"], note: "اسما البطاريتين يأتيان من شاشة الأصناف." }
+    : { title: "اختيار نظام التخزين والكبائن", msg: ["9928124bfe3ee13a", "5a3974a67b110d70"], btns: ["c857a17672471822", "94c25b4ffc18917d", "d964833169c7a44d", "c9ca38df68ce18bb", "49e61614093c2a7f"], note: "أنواع الكبائن تأتي من شاشة الأصناف." },
   { title: "ملخص المنظومة المقترحة", msg: ["e5e513b9703cd7a9"], btns: ["cca78d5e7f57d233", "2dd4e1a26d82b5c8", "49e61614093c2a7f"] },
   { title: "خيارات ما بعد عرض السعر", msg: [], btns: ["484bf23e3dd44054", "8a500db8ddc7b809", "8bb17c0836d361db", "49e61614093c2a7f"] },
 ];
@@ -78,6 +81,7 @@ const COM_LV = comBranch(true);
 const COM_HV = comBranch(false);
 // Industrial quote path (approved plan): 14 stations.
 const IND_TREE: typeof RES_TREE = [
+  WELCOME,
   { title: "اختيار نوع المنظومة", msg: ["5f3a5397b45b53d7", "43496107d13ca096"], btns: ["3e8021ccc9fdb708", "be0ff08827145be4", "dff2de3b794789b3"] },
   { title: "اسم المشروع أو المصنع", msg: ["04213971b6cd422a", "fe05d8c84f2b5a7a", "08cebc7cf6b7a18c"], btns: ["49e61614093c2a7f"] },
   { title: "موقع المشروع", msg: [], btns: ["49e61614093c2a7f"], note: "قائمة المحافظات ثابتة داخل البوت." },
@@ -122,11 +126,12 @@ function Node({ st, n, saved, onSave, last }: { st: (typeof RES_TREE)[number]; n
               <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground"><MessageSquareText className="h-3.5 w-3.5" />الرسالة</div>
               {st.msg.map((k) => { const r = BY_KEY.get(k); return r ? <Field key={k + (saved.get(k)?.updated_at ?? "")} row={r} saved={saved.get(k)} onSave={onSave(k)} /> : null; })}
             </div>}
-            {st.btns.length > 0 && <div className="space-y-2">
+            {(st.btns.length > 0 || st.fixed) && <div className="space-y-2">
               <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground"><MousePointerClick className="h-3.5 w-3.5" />الأزرار</div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {st.btns.map((k) => { const r = BY_KEY.get(k); return r ? <Field key={k + (saved.get(k)?.updated_at ?? "")} row={r} saved={saved.get(k)} onSave={onSave(k)} /> : null; })}
               </div>
+              {st.fixed && <div className="flex flex-wrap gap-2">{st.fixed.map((f) => <span key={f} className="rounded-full border bg-background px-3 py-1 text-xs text-foreground">{f}</span>)}</div>}
             </div>}
             {st.note && <p className="rounded-md bg-background px-2 py-1.5 text-xs text-muted-foreground">{st.note}</p>}
           </div>
@@ -168,17 +173,16 @@ export function BotFlow({ pw }: { pw: string }) {
         ))}
       </div>
       <div className="rounded-xl border bg-background p-3">
-        <div className="mb-3 text-xs font-semibold text-muted-foreground">يبدأ بعد: اختيار نوع المنظومة ← {TABS.find((x) => x[0] === sys)![1]}</div>
-        {sys === "res" && <Tree tree={RES_TREE.slice(1)} start={1} saved={saved} onSave={onSave} />}
-        {sys === "ind" && <Tree tree={IND_TREE.slice(1)} start={1} saved={saved} onSave={onSave} />}
+                {sys === "res" && <Tree tree={RES_TREE} saved={saved} onSave={onSave} />}
+        {sys === "ind" && <Tree tree={IND_TREE} saved={saved} onSave={onSave} />}
         {sys === "com" && <Fragment>
-          <Tree tree={COM_TREE.slice(1)} start={1} saved={saved} onSave={onSave} />
+          <Tree tree={COM_TREE} saved={saved} onSave={onSave} />
           <div className="my-4 flex items-center gap-2 text-xs font-semibold text-muted-foreground"><span className="h-px flex-1 bg-border" />يتفرع حسب الاستهلاك<span className="h-px flex-1 bg-border" /></div>
           <div className="grid gap-4 md:grid-cols-2">
             {([[COM_LV, "أ", "الجهد المنخفض (LV)", "حتى 20kW"], [COM_HV, "ب", "الجهد العالي (HV)", "أكبر من 20kW"]] as const).map(([tr, m, t, sub]) => (
               <div key={m} className="space-y-3 rounded-lg border bg-muted/20 p-2">
                 <div className="flex items-center gap-2 rounded-md bg-secondary px-3 py-2 text-secondary-foreground"><Zap className="h-4 w-4" /><b className="flex-1 text-sm">{t}</b><span className="text-xs text-muted-foreground">{sub}</span></div>
-                <Tree tree={tr} start={3} mark={m} saved={saved} onSave={onSave} />
+                <Tree tree={tr} start={4} mark={m} saved={saved} onSave={onSave} />
               </div>
             ))}
           </div>
