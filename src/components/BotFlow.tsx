@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Search, Save, RotateCcw, ChevronLeft, MessageSquareText, Check } from "lucide-react";
 import { listBotTexts, saveBotText, listBotSteps } from "@/lib/crm.functions";
 import { StepEditor, StepCard } from "@/components/BotSteps";
-import { Plus } from "lucide-react";
+import { Plus, Home, Store, Factory, Zap } from "lucide-react";
 import { offlineQuery } from "@/lib/offline-cache";
 import ALL from "@/lib/bot-texts.json";
 
@@ -97,11 +97,14 @@ const IND_TREE: typeof RES_TREE = [
 ];
 const BY_KEY = new Map(TEXTS.map((r) => [r.k, r]));
 
-function ResTree({ saved, onSave, tree = RES_TREE, label = "السكني", start = 0, mark = "" }: { tree?: typeof RES_TREE; label?: string; start?: number; mark?: string; saved: Map<string, { value: string | null; desc_value: string | null; updated_at?: string }>; onSave: (k: string) => (v: string | null, d: string | null) => Promise<void> }) {
+type Extra = { pw: string; steps: Awaited<ReturnType<typeof listBotSteps>>; refetchSteps: () => void };
+function ResTree({ saved, onSave, tree = RES_TREE, label = "السكني", start = 0, mark = "", ex, head = true }: { ex?: Extra; head?: boolean; tree?: typeof RES_TREE; label?: string; start?: number; mark?: string; saved: Map<string, { value: string | null; desc_value: string | null; updated_at?: string }>; onSave: (k: string) => (v: string | null, d: string | null) => Promise<void> }) {
   const [open, setOpen] = useState<number | null>(null);
+  const [adding, setAdding] = useState<string | null>(null);
+  const txt = (k: string) => { const r = BY_KEY.get(k); return (saved.get(k)?.value ?? r?.o ?? "").trim(); };
   return (
     <div className="rounded-xl border bg-card p-2">
-      <div className="p-1 text-sm font-bold text-primary">مسار عرض السعر — {label}</div>
+      {head && <div className="p-1 text-sm font-bold text-primary">مسار عرض السعر — {label}</div>}
       <ol className="relative space-y-2 border-r-2 border-primary/30 pr-3">
         {tree.map((st, i) => {
           const keys = [...st.msg, ...st.btns];
@@ -116,14 +119,22 @@ function ResTree({ saved, onSave, tree = RES_TREE, label = "السكني", start
                 {edited > 0 && <span className="rounded-full bg-primary/15 px-2 text-xs text-primary">{edited} معدّل</span>}
                 <ChevronLeft className={`h-4 w-4 transition-transform ${isOpen ? "-rotate-90" : ""}`} />
               </button>
+              {!isOpen && st.msg.length > 0 && <p className="mt-1 line-clamp-2 rounded-md bg-accent/40 px-2 py-1 text-xs leading-5 text-foreground/80">{st.msg.map(txt).join(" … ")}</p>}
               {isOpen && (
                 <div className="mt-1 space-y-2 rounded-lg border bg-muted/30 p-2">
                   {st.msg.length > 0 && <div className="flex items-center gap-1 text-xs text-muted-foreground"><MessageSquareText className="h-3.5 w-3.5" />الرسالة</div>}
                   {st.msg.map((k) => { const r = BY_KEY.get(k); return r ? <Field key={k + (saved.get(k)?.updated_at ?? "")} row={r} saved={saved.get(k)} onSave={onSave(k)} /> : null; })}
                   <div className="text-xs text-muted-foreground">الأزرار</div>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {st.btns.map((k) => { const r = BY_KEY.get(k); return r ? <Field key={k + (saved.get(k)?.updated_at ?? "")} row={r} saved={saved.get(k)} onSave={onSave(k)} /> : null; })}
+                    {st.btns.map((k) => { const r = BY_KEY.get(k); return r ? <div key={k} className="space-y-1"><Field key={k + (saved.get(k)?.updated_at ?? "")} row={r} saved={saved.get(k)} onSave={onSave(k)} />
+                      {ex && <button onClick={() => setAdding(adding === k ? null : k)} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus className="h-3 w-3" />إضافة رسالة وأزرار بعد هذا الزر</button>}</div> : null; })}
                   </div>
+                  {ex && st.btns.map((k) => (
+                    <div key={"s" + k} className="space-y-2">
+                      {ex.steps.filter((x) => x.trigger_key === k).map((x) => <div key={x.id}><div className="mb-1 text-xs text-muted-foreground">بعد زر «{txt(k)}»:</div><StepCard pw={ex.pw} step={x} steps={ex.steps} onChanged={ex.refetchSteps} /></div>)}
+                      {adding === k && <StepEditor pw={ex.pw} triggerKey={k} section={label} steps={ex.steps} onDone={() => { setAdding(null); ex.refetchSteps(); }} />}
+                    </div>
+                  ))}
                   {st.note && <p className="text-xs text-muted-foreground">{st.note}</p>}
                 </div>
               )}
@@ -142,6 +153,8 @@ export function BotFlow({ pw }: { pw: string }) {
   const listSteps = useServerFn(listBotSteps);
   const { data: steps = [], refetch: refetchSteps } = useQuery(offlineQuery({ queryKey: ["bot-steps"], queryFn: () => listSteps({ data: { pw } }) }));
   const [adding, setAdding] = useState<string | null>(null);
+  const [sys, setSys] = useState<"res" | "com" | "ind" | null>("com");
+  const ex: Extra = { pw, steps, refetchSteps: () => void refetchSteps() };
   const saved = useMemo(() => new Map(rows.map((r) => [r.key, r])), [rows]);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<string | null>(ORDER[0] ?? null);
@@ -178,9 +191,23 @@ export function BotFlow({ pw }: { pw: string }) {
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="ابحث عن كلمة في رسالة أو زر..." aria-label="بحث"
           className="w-full rounded-lg border border-input bg-background py-2 pl-3 pr-9 text-sm outline-none focus:ring-2 focus:ring-ring" />
       </div>
-      {!q.trim() && <ResTree saved={saved} onSave={onSave} />}
-      {!q.trim() && <div className="space-y-2"><ResTree saved={saved} onSave={onSave} tree={COM_TREE} label="التجاري" /><div className="grid gap-2 md:grid-cols-2"><ResTree saved={saved} onSave={onSave} tree={COM_LV} label="التجاري ← جهد منخفض Low Voltage (حتى 20kW)" start={3} mark="أ" /><ResTree saved={saved} onSave={onSave} tree={COM_HV} label="التجاري ← جهد عالي High Voltage (أكبر من 20kW)" start={3} mark="ب" /></div></div>}
-      {!q.trim() && <ResTree saved={saved} onSave={onSave} tree={IND_TREE} label="الصناعي" />}
+      {!q.trim() && <div className="space-y-2 rounded-2xl border bg-card p-2">
+        <div className="mx-auto w-fit rounded-full bg-primary px-4 py-1.5 text-sm font-bold text-primary-foreground">➊ اختيار نوع المنظومة</div>
+        <div className="grid grid-cols-3 gap-2">
+          {([["res", "السكني", Home], ["com", "التجاري", Store], ["ind", "الصناعي", Factory]] as const).map(([id, t, I]) => (
+            <button key={id} onClick={() => setSys(sys === id ? null : id)} className={`flex items-center justify-center gap-1.5 rounded-xl border-2 py-2 text-sm font-bold transition ${sys === id ? "border-accent-foreground/20 bg-[var(--flow-active)] text-[var(--flow-active-foreground)] shadow" : "border-border bg-secondary text-secondary-foreground"}`}><I className="h-4 w-4" />{t}</button>
+          ))}
+        </div>
+        {sys === "res" && <ResTree ex={ex} saved={saved} onSave={onSave} tree={RES_TREE.slice(1)} start={1} label="السكني" head={false} />}
+        {sys === "com" && <div className="space-y-2"><ResTree ex={ex} saved={saved} onSave={onSave} tree={COM_TREE.slice(1)} start={1} label="التجاري" head={false} />
+          <div className="grid gap-2 md:grid-cols-2">
+            {([[COM_LV, "أ", "الجهد المنخفض (LV)", "حتى 20kW"], [COM_HV, "ب", "الجهد العالي (HV)", "أكبر من 20kW"]] as const).map(([tr, m, t, sub]) => (
+              <div key={m} className="space-y-1"><div className="flex items-center justify-center gap-2 rounded-xl bg-primary p-2 text-primary-foreground"><Zap className="h-5 w-5 text-[var(--flow-active)]" /><div className="text-center"><b className="text-sm">{t}</b><div className="text-xs font-bold text-[var(--flow-active)]">{sub}</div></div></div>
+                <ResTree ex={ex} saved={saved} onSave={onSave} tree={tr} start={3} mark={m} label={"التجاري " + t} head={false} /></div>
+            ))}
+          </div></div>}
+        {sys === "ind" && <ResTree ex={ex} saved={saved} onSave={onSave} tree={IND_TREE.slice(1)} start={1} label="الصناعي" head={false} />}
+      </div>}
       <div className="space-y-2 rounded-xl border bg-card p-2">
         <div className="flex items-center gap-2"><b className="flex-1 text-sm text-primary">خطوات مستقلة (تُفتح من خطوات أخرى)</b>
           <button onClick={() => setAdding("__free")} className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-bold text-primary-foreground"><Plus className="h-3.5 w-3.5" />خطوة</button></div>
