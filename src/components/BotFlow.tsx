@@ -70,8 +70,7 @@ const RES_TREE: { title: string; msg: string[]; btns: string[]; fixed?: string[]
   { title: "نمط الاستخدام (نهار / ليل)", msg: ["14396d9b58cf5304", "0ded4780a60eaa29"], btns: ["2b18ee871f40b0fd", "ac0b2da7a98be976", "49e61614093c2a7f"] },
   { title: "اختيار نوع البطارية", msg: [], fixed: ["UF5000 5.12kWh", "Fidus Pro 5.12kWh"], btns: ["49e61614093c2a7f"], note: "اسما البطاريتين يأتيان من شاشة الأصناف." },
   { title: "ملخص المنظومة المقترحة", msg: ["c70260d1503cbd9e", "2eaea7b9b7d0c673"], btns: ["9d7fbbbf88df922f", "49e61614093c2a7f"] },
-  { title: "إدخال اسم العميل", msg: ["1b9f2bd45379d795"], btns: ["49e61614093c2a7f"], note: "زر «الاسم المسجل سابقاً» يظهر تلقائياً باسم العميل." },
-  { title: "خيارات ما بعد عرض السعر", msg: [], btns: ["484bf23e3dd44054", "8a500db8ddc7b809", "8bb17c0836d361db", "49e61614093c2a7f"] },
+  { title: "خيارات ما بعد عرض السعر", msg: [], btns: ["5132978e125efc09", "60a7550dc681a290", "583ffcb4aa5eb831"] },
 ];
 // Commercial quote path (approved plan): stations with their harvested message parts and buttons.
 const COM_TREE: typeof RES_TREE = [
@@ -88,7 +87,7 @@ const comBranch = (lv: boolean): typeof RES_TREE => [
     ? { title: "اختيار نوع البطارية", msg: [], fixed: ["Hithium 16kWh", "Fidus 16kWh"], btns: ["49e61614093c2a7f"], note: "اسما البطاريتين يأتيان من شاشة الأصناف." }
     : { title: "اختيار نظام التخزين والكبائن", msg: ["9928124bfe3ee13a", "5a3974a67b110d70"], btns: ["c857a17672471822", "94c25b4ffc18917d", "d964833169c7a44d", "c9ca38df68ce18bb", "49e61614093c2a7f"], note: "أنواع الكبائن تأتي من شاشة الأصناف." },
   { title: "ملخص المنظومة المقترحة", msg: ["e5e513b9703cd7a9"], btns: ["cca78d5e7f57d233", "2dd4e1a26d82b5c8", "49e61614093c2a7f"] },
-  { title: "خيارات ما بعد عرض السعر", msg: [], btns: ["484bf23e3dd44054", "8a500db8ddc7b809", "8bb17c0836d361db", "49e61614093c2a7f"] },
+  { title: "خيارات ما بعد عرض السعر", msg: [], btns: ["5132978e125efc09", "60a7550dc681a290", "583ffcb4aa5eb831"] },
 ];
 const COM_LV = comBranch(true);
 const COM_HV = comBranch(false);
@@ -111,21 +110,25 @@ const IND_TREE: typeof RES_TREE = [
   { title: "خيارات ما بعد عرض السعر", msg: [], btns: ["484bf23e3dd44054", "8a500db8ddc7b809", "8bb17c0836d361db", "49e61614093c2a7f"] },
 ];
 const BY_KEY = new Map(TEXTS.map((r) => [r.k, r]));
-// Sections outside the quote trees: each bot message (m) becomes one step with its text parts and buttons.
-const sectionTree = (secs: string[]): typeof RES_TREE => {
-  const g = new Map<string, T[]>();
-  TEXTS.filter((r) => secs.includes(r.s)).forEach((r) => { if (!g.has(r.m)) g.set(r.m, []); g.get(r.m)!.push(r); });
-  return [...g.values()].map((rs) => {
-    const msg = rs.filter((r) => r.t !== "b").map((r) => r.k);
-    const btns = rs.filter((r) => r.t === "b").map((r) => r.k);
-    const first = ((rs.find((r) => r.t !== "b") ?? rs[0])?.o ?? "").replace(/[*_]/g, "").trim().split("\n")[0] ?? "";
-    return { title: first.length > 40 ? first.slice(0, 40) + "…" : first || "رسالة", msg, btns };
-  });
-};
-const WEL_TREE = sectionTree(["الترحيب والقائمة الرئيسية"]);
-const BUY_TREE = sectionTree(["الشراء والدفع"]);
-const PVS_TREE = sectionTree(["دراسة PVsyst"]);
-const SLD_TREE = sectionTree(["مخطط SLD"]);
+// Non-quote tabs: only the steps a customer really goes through (verified by replaying the live State Machine).
+const WEL_TREE: typeof RES_TREE = [WELCOME];
+const BUY_TREE: typeof RES_TREE = [
+  { title: "اسم العميل للفاتورة", msg: ["20ce95407d5f0f88", "765f164192b1dba9"], btns: ["49e61614093c2a7f"] },
+  { title: "اختيار طريقة الدفع", msg: ["0fadd3651818e5c7", "cc70f278995c9715"], btns: ["6c50ec49c447b00e", "d196ecc6637e223b", "2a6a4589be9b2412"] },
+  { title: "اسم الشبكة (حوالة شبكة محلية)", msg: ["3e52d7d784977df9", "61bac8ac968c9e01"], btns: ["49e61614093c2a7f"] },
+  { title: "اسم المحفظة (محفظة إلكترونية)", msg: ["09cc0371bc10c04e", "17e69b8aa842699b"], btns: ["49e61614093c2a7f"] },
+  { title: "تأكيد الطلب", msg: ["df3eaab6c2945b0c", "bb0af5d58b9f4613", "25d8390d20990688", "7a2eb355fe92fd9f"], btns: [] },
+];
+const PVS_TREE: typeof RES_TREE = [
+  { title: "مدينة التركيب", msg: ["d06d84f786e5b16a", "e2b88750834d68fa"], btns: ["45a83cc2363c1167", "4e7168f715a2747f", "bb97837975a03ab8"] },
+  { title: "موقع التركيب (عند اختيار أخرى)", msg: ["ac1cd8f249a2b960", "d82a9d5bd7b615dc"], btns: [] },
+  { title: "اتجاه الألواح", msg: ["1be3275026e48354", "63ffe9a593945ec5"], btns: ["bc642c15a8d5de9b", "864c027b5c0d1b9d", "3241e1afbd5a6069", "b16d315fcb9b35b1", "3bd8ee9a97ed9678", "a49eec3ef6c0a06e"] },
+  { title: "زاوية ميلان الألواح", msg: ["fc62f1048a758ce8", "bc125fd631f0756d"], btns: ["44d451122b84fb9d"] },
+  { title: "تأكيد تسجيل طلب الدراسة", msg: ["d3cf21167c829da2", "a622b2cdbff19bd3"], btns: ["484bf23e3dd44054", "8bb17c0836d361db"] },
+];
+const SLD_TREE: typeof RES_TREE = [
+  { title: "تأكيد تسجيل طلب المخطط", msg: ["2a95feaa8350bcf4", "bec04ae6b25e4bf5"], btns: ["484bf23e3dd44054", "8a500db8ddc7b809"] },
+];
 
 type Saved = Map<string, { value: string | null; desc_value: string | null; updated_at?: string }>;
 type SaveFn = (k: string) => (v: string | null, d: string | null) => Promise<void>;
