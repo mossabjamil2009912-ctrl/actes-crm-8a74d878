@@ -1,16 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Search, Save, RotateCcw, ChevronLeft, MessageSquareText, Check } from "lucide-react";
-import { listBotTexts, saveBotText, listBotSteps } from "@/lib/crm.functions";
-import { StepEditor, StepCard } from "@/components/BotSteps";
-import { Plus, Home, Store, Factory, Zap } from "lucide-react";
+import { Save, RotateCcw, ChevronDown, MessageSquareText, Check, MousePointerClick } from "lucide-react";
+import { listBotTexts, saveBotText } from "@/lib/crm.functions";
+import { Home, Store, Factory, Zap } from "lucide-react";
 import { offlineQuery } from "@/lib/offline-cache";
 import ALL from "@/lib/bot-texts.json";
 
 type T = { k: string; m: string; t: string; s: string; o: string; b?: string; d?: string };
 const TEXTS = ALL as T[];
-const ORDER = ["الترحيب والقائمة الرئيسية", "السكني", "التجاري", "الصناعي", "التخزين", "عرض السعر", "تعديل المنظومة", "طلب أصناف", "الموقع والمدينة", "دراسة PVsyst", "مخطط SLD", "التقارير", "الشراء والدفع", "التواصل مع المبيعات", "الدعم الفني", "رسائل الانتظار", "أزرار الرجوع", "رسائل عامة", "رسائل أخرى"];
 
 // Keep the original leading/trailing spaces and line breaks so the message layout stays intact.
 const edges = (s: string) => { const m = s.match(/^(\s*)([\s\S]*?)(\s*)$/)!; return [m[1] ?? "", m[2] ?? "", m[3] ?? ""] as const; };
@@ -97,52 +95,52 @@ const IND_TREE: typeof RES_TREE = [
 ];
 const BY_KEY = new Map(TEXTS.map((r) => [r.k, r]));
 
-type Extra = { pw: string; steps: Awaited<ReturnType<typeof listBotSteps>>; refetchSteps: () => void };
-function ResTree({ saved, onSave, tree = RES_TREE, label = "السكني", start = 0, mark = "", ex, head = true }: { ex?: Extra; head?: boolean; tree?: typeof RES_TREE; label?: string; start?: number; mark?: string; saved: Map<string, { value: string | null; desc_value: string | null; updated_at?: string }>; onSave: (k: string) => (v: string | null, d: string | null) => Promise<void> }) {
-  const [open, setOpen] = useState<number | null>(null);
-  const [adding, setAdding] = useState<string | null>(null);
-  const txt = (k: string) => { const r = BY_KEY.get(k); return (saved.get(k)?.value ?? r?.o ?? "").trim(); };
+type Saved = Map<string, { value: string | null; desc_value: string | null; updated_at?: string }>;
+type SaveFn = (k: string) => (v: string | null, d: string | null) => Promise<void>;
+
+function Node({ st, n, saved, onSave, last }: { st: (typeof RES_TREE)[number]; n: string; saved: Saved; onSave: SaveFn; last: boolean }) {
+  const [open, setOpen] = useState(false);
+  const txt = (k: string) => (saved.get(k)?.value ?? BY_KEY.get(k)?.o ?? "").trim();
+  const edited = [...st.msg, ...st.btns].filter((k) => saved.has(k)).length;
+  const preview = st.msg.map(txt).filter(Boolean).join(" … ");
   return (
-    <div className="rounded-xl border bg-card p-2">
-      {head && <div className="p-1 text-sm font-bold text-primary">مسار عرض السعر — {label}</div>}
-      <ol className="relative space-y-2 border-r-2 border-primary/30 pr-3">
-        {tree.map((st, i) => {
-          const keys = [...st.msg, ...st.btns];
-          const edited = keys.filter((k) => saved.has(k)).length;
-          const isOpen = open === i;
-          return (
-            <li key={i} className="relative">
-              <span className="absolute -right-[1.15rem] top-3 h-3 w-3 rounded-full border-2 border-primary bg-background" />
-              <button onClick={() => setOpen(isOpen ? null : i)} className="flex w-full items-center gap-2 rounded-lg border bg-background p-2 text-right text-sm font-semibold">
-                <span className="flex h-6 min-w-6 px-1 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">{i + 1 + start}{mark}</span>
-                <span className="flex-1">{st.title}</span>
-                {edited > 0 && <span className="rounded-full bg-primary/15 px-2 text-xs text-primary">{edited} معدّل</span>}
-                <ChevronLeft className={`h-4 w-4 transition-transform ${isOpen ? "-rotate-90" : ""}`} />
-              </button>
-              {!isOpen && st.msg.length > 0 && <p className="mt-1 line-clamp-2 rounded-md bg-accent/40 px-2 py-1 text-xs leading-5 text-foreground/80">{st.msg.map(txt).join(" … ")}</p>}
-              {isOpen && (
-                <div className="mt-1 space-y-2 rounded-lg border bg-muted/30 p-2">
-                  {st.msg.length > 0 && <div className="flex items-center gap-1 text-xs text-muted-foreground"><MessageSquareText className="h-3.5 w-3.5" />الرسالة</div>}
-                  {st.msg.map((k) => { const r = BY_KEY.get(k); return r ? <Field key={k + (saved.get(k)?.updated_at ?? "")} row={r} saved={saved.get(k)} onSave={onSave(k)} /> : null; })}
-                  <div className="text-xs text-muted-foreground">الأزرار</div>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {st.btns.map((k) => { const r = BY_KEY.get(k); return r ? <div key={k} className="space-y-1"><Field key={k + (saved.get(k)?.updated_at ?? "")} row={r} saved={saved.get(k)} onSave={onSave(k)} />
-                      {ex && <button onClick={() => setAdding(adding === k ? null : k)} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus className="h-3 w-3" />إضافة رسالة وأزرار بعد هذا الزر</button>}</div> : null; })}
-                  </div>
-                  {ex && st.btns.map((k) => (
-                    <div key={"s" + k} className="space-y-2">
-                      {ex.steps.filter((x) => x.trigger_key === k).map((x) => <div key={x.id}><div className="mb-1 text-xs text-muted-foreground">بعد زر «{txt(k)}»:</div><StepCard pw={ex.pw} step={x} steps={ex.steps} onChanged={ex.refetchSteps} /></div>)}
-                      {adding === k && <StepEditor pw={ex.pw} triggerKey={k} section={label} steps={ex.steps} onDone={() => { setAdding(null); ex.refetchSteps(); }} />}
-                    </div>
-                  ))}
-                  {st.note && <p className="text-xs text-muted-foreground">{st.note}</p>}
-                </div>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-    </div>
+    <li className="relative pr-10">
+      {!last && <span className="absolute right-[0.9rem] top-8 bottom-[-0.75rem] w-px bg-border" aria-hidden />}
+      <span className="absolute right-0 top-1 flex h-7 min-w-7 items-center justify-center rounded-full border-2 border-primary bg-card px-1 text-xs font-bold text-primary">{n}</span>
+      <div className={`rounded-lg border bg-card shadow-sm transition ${open ? "border-primary/40" : ""}`}>
+        <button onClick={() => setOpen(!open)} className="flex w-full items-start gap-2 p-3 text-right">
+          <div className="flex-1 space-y-1">
+            <div className="text-sm font-bold text-foreground">{st.title}</div>
+            {preview && <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">{preview}</p>}
+          </div>
+          {edited > 0 && <span className="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold text-secondary-foreground">{edited} معدّل</span>}
+          <ChevronDown className={`mt-0.5 h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+        {open && (
+          <div className="space-y-3 border-t bg-muted/30 p-3">
+            {st.msg.length > 0 && <div className="space-y-2">
+              <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground"><MessageSquareText className="h-3.5 w-3.5" />الرسالة</div>
+              {st.msg.map((k) => { const r = BY_KEY.get(k); return r ? <Field key={k + (saved.get(k)?.updated_at ?? "")} row={r} saved={saved.get(k)} onSave={onSave(k)} /> : null; })}
+            </div>}
+            {st.btns.length > 0 && <div className="space-y-2">
+              <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground"><MousePointerClick className="h-3.5 w-3.5" />الأزرار</div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {st.btns.map((k) => { const r = BY_KEY.get(k); return r ? <Field key={k + (saved.get(k)?.updated_at ?? "")} row={r} saved={saved.get(k)} onSave={onSave(k)} /> : null; })}
+              </div>
+            </div>}
+            {st.note && <p className="rounded-md bg-background px-2 py-1.5 text-xs text-muted-foreground">{st.note}</p>}
+          </div>
+        )}
+      </div>
+    </li>
+  );
+}
+
+function Tree({ tree, start = 0, mark = "", saved, onSave }: { tree: typeof RES_TREE; start?: number; mark?: string; saved: Saved; onSave: SaveFn }) {
+  return (
+    <ol className="space-y-3">
+      {tree.map((st, i) => <Node key={i} st={st} n={`${i + 1 + start}${mark}`} last={i === tree.length - 1} saved={saved} onSave={onSave} />)}
+    </ol>
   );
 }
 
@@ -150,112 +148,42 @@ export function BotFlow({ pw }: { pw: string }) {
   const list = useServerFn(listBotTexts);
   const saveFn = useServerFn(saveBotText);
   const { data: rows = [], refetch } = useQuery(offlineQuery({ queryKey: ["bot-texts"], queryFn: () => list({ data: { pw } }) }));
-  const listSteps = useServerFn(listBotSteps);
-  const { data: steps = [], refetch: refetchSteps } = useQuery(offlineQuery({ queryKey: ["bot-steps"], queryFn: () => listSteps({ data: { pw } }) }));
-  const [adding, setAdding] = useState<string | null>(null);
-  const [sys, setSys] = useState<"res" | "com" | "ind" | null>("com");
-  const ex: Extra = { pw, steps, refetchSteps: () => void refetchSteps() };
+  const [sys, setSys] = useState<"res" | "com" | "ind">("res");
   const saved = useMemo(() => new Map(rows.map((r) => [r.key, r])), [rows]);
-  const [q, setQ] = useState("");
-  const [open, setOpen] = useState<string | null>(ORDER[0] ?? null);
-
-  const sections = useMemo(() => {
-    const qq = q.trim();
-    const hit = (r: T) => !qq || r.o.includes(qq) || (saved.get(r.k)?.value ?? "").includes(qq);
-    const bySec = new Map<string, Map<string, T[]>>();
-    for (const r of TEXTS) {
-      if (!bySec.has(r.s)) bySec.set(r.s, new Map());
-      const g = bySec.get(r.s)!;
-      if (!g.has(r.m)) g.set(r.m, []);
-      g.get(r.m)!.push(r);
-    }
-    return ORDER.filter((s) => bySec.has(s)).map((s) => {
-      const msgs = [...bySec.get(s)!.values()].filter((ms) => ms.some(hit));
-      return { s, msgs, edited: msgs.flat().filter((r) => saved.has(r.k)).length };
-    }).filter((x) => x.msgs.length);
-  }, [q, saved]);
-
-  const onSave = (k: string) => async (value: string | null, desc_value: string | null) => {
+  const onSave: SaveFn = (k) => async (value, desc_value) => {
     await saveFn({ data: { pw, key: k, value, desc_value } });
     await refetch();
   };
+  const TABS = [["res", "السكني", Home], ["com", "التجاري", Store], ["ind", "الصناعي", Factory]] as const;
 
   return (
-    <div dir="rtl" className="space-y-3 p-3">
-      <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm leading-6">
-        <b>مسار البوت:</b> هنا كل رسائل البوت النصية وأزراره. عدّل أي نص أو اسم زر واضغط حفظ، والبوت يرسل الجديد من الرسالة التالية.
-        الأرقام والأسماء التي يحسبها البوت (القدرة، السعر، اسم العميل) تُضاف تلقائياً بين الأجزاء ولا تحتاج تعديل. الملفات لا تتغير من هنا.
+    <div dir="rtl" className="mx-auto max-w-4xl space-y-4 p-3">
+      <div className="space-y-1">
+        <h2 className="text-lg font-bold text-foreground">مسار عرض السعر</h2>
+        <p className="text-sm text-muted-foreground">اضغط على أي خطوة لتعديل رسالتها وأسماء أزرارها، ثم اضغط حفظ — يصل التعديل للبوت من الرسالة التالية.</p>
       </div>
-      <div className="relative">
-        <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="ابحث عن كلمة في رسالة أو زر..." aria-label="بحث"
-          className="w-full rounded-lg border border-input bg-background py-2 pl-3 pr-9 text-sm outline-none focus:ring-2 focus:ring-ring" />
+      <div className="grid grid-cols-3 gap-1 rounded-xl border bg-muted p-1">
+        {TABS.map(([id, t, I]) => (
+          <button key={id} onClick={() => setSys(id)} className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-bold transition ${sys === id ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}><I className="h-4 w-4" />{t}</button>
+        ))}
       </div>
-      {!q.trim() && <div className="space-y-2 rounded-2xl border bg-card p-2">
-        <div className="mx-auto w-fit rounded-full bg-primary px-4 py-1.5 text-sm font-bold text-primary-foreground">➊ اختيار نوع المنظومة</div>
-        <div className="grid grid-cols-3 gap-2">
-          {([["res", "السكني", Home], ["com", "التجاري", Store], ["ind", "الصناعي", Factory]] as const).map(([id, t, I]) => (
-            <button key={id} onClick={() => setSys(sys === id ? null : id)} className={`flex items-center justify-center gap-1.5 rounded-xl border-2 py-2 text-sm font-bold transition ${sys === id ? "border-accent-foreground/20 bg-[var(--flow-active)] text-[var(--flow-active-foreground)] shadow" : "border-border bg-secondary text-secondary-foreground"}`}><I className="h-4 w-4" />{t}</button>
-          ))}
-        </div>
-        {sys === "res" && <ResTree ex={ex} saved={saved} onSave={onSave} tree={RES_TREE.slice(1)} start={1} label="السكني" head={false} />}
-        {sys === "com" && <div className="space-y-2"><ResTree ex={ex} saved={saved} onSave={onSave} tree={COM_TREE.slice(1)} start={1} label="التجاري" head={false} />
-          <div className="grid gap-2 md:grid-cols-2">
+      <div className="rounded-xl border bg-background p-3">
+        <div className="mb-3 text-xs font-semibold text-muted-foreground">يبدأ بعد: اختيار نوع المنظومة ← {TABS.find((x) => x[0] === sys)![1]}</div>
+        {sys === "res" && <Tree tree={RES_TREE.slice(1)} start={1} saved={saved} onSave={onSave} />}
+        {sys === "ind" && <Tree tree={IND_TREE.slice(1)} start={1} saved={saved} onSave={onSave} />}
+        {sys === "com" && <Fragment>
+          <Tree tree={COM_TREE.slice(1)} start={1} saved={saved} onSave={onSave} />
+          <div className="my-4 flex items-center gap-2 text-xs font-semibold text-muted-foreground"><span className="h-px flex-1 bg-border" />يتفرع حسب الاستهلاك<span className="h-px flex-1 bg-border" /></div>
+          <div className="grid gap-4 md:grid-cols-2">
             {([[COM_LV, "أ", "الجهد المنخفض (LV)", "حتى 20kW"], [COM_HV, "ب", "الجهد العالي (HV)", "أكبر من 20kW"]] as const).map(([tr, m, t, sub]) => (
-              <div key={m} className="space-y-1"><div className="flex items-center justify-center gap-2 rounded-xl bg-primary p-2 text-primary-foreground"><Zap className="h-5 w-5 text-[var(--flow-active)]" /><div className="text-center"><b className="text-sm">{t}</b><div className="text-xs font-bold text-[var(--flow-active)]">{sub}</div></div></div>
-                <ResTree ex={ex} saved={saved} onSave={onSave} tree={tr} start={3} mark={m} label={"التجاري " + t} head={false} /></div>
-            ))}
-          </div></div>}
-        {sys === "ind" && <ResTree ex={ex} saved={saved} onSave={onSave} tree={IND_TREE.slice(1)} start={1} label="الصناعي" head={false} />}
-      </div>}
-      <div className="space-y-2 rounded-xl border bg-card p-2">
-        <div className="flex items-center gap-2"><b className="flex-1 text-sm text-primary">خطوات مستقلة (تُفتح من خطوات أخرى)</b>
-          <button onClick={() => setAdding("__free")} className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-bold text-primary-foreground"><Plus className="h-3.5 w-3.5" />خطوة</button></div>
-        {steps.filter((x) => !x.trigger_key).map((x) => <StepCard key={x.id} pw={pw} step={x} steps={steps} onChanged={() => void refetchSteps()} />)}
-        {adding === "__free" && <StepEditor pw={pw} triggerKey={null} section={null} steps={steps} onDone={() => { setAdding(null); void refetchSteps(); }} />}
-      </div>
-      {sections.map(({ s, msgs, edited }) => {
-        const isOpen = open === s || !!q.trim();
-        return (
-          <div key={s} className="rounded-xl border bg-card">
-            <button onClick={() => setOpen(isOpen && !q ? null : s)} className="flex w-full items-center gap-2 p-3 text-right font-bold text-primary">
-              <ChevronLeft className={`h-4 w-4 transition-transform ${isOpen ? "-rotate-90" : ""}`} />
-              <span className="flex-1">{s}</span>
-              {edited > 0 && <span className="rounded-full bg-primary px-2 text-xs text-primary-foreground">{edited} معدّل</span>}
-              <span className="rounded-full bg-muted px-2 text-xs text-muted-foreground">{msgs.length} رسالة</span>
-            </button>
-            {isOpen && (
-              <div className="space-y-2 px-2 pb-2">
-                {msgs.map((ms) => {
-                  const texts = ms.filter((r) => r.t === "t");
-                  const btns = ms.filter((r) => r.t === "b");
-                  return (
-                    <div key={ms[0]?.m} className="space-y-2 rounded-lg border bg-background p-2">
-                      {texts.length > 0 && <div className="flex items-center gap-1 text-xs text-muted-foreground"><MessageSquareText className="h-3.5 w-3.5" />رسالة{texts.length > 1 ? ` — ${texts.length} أجزاء، وبينها قيم يضيفها البوت` : ""}</div>}
-                      {texts.map((r) => <Field key={r.k + (saved.get(r.k)?.updated_at ?? "")} row={r} saved={saved.get(r.k)} onSave={onSave(r.k)} />)}
-                      {btns.length > 0 && <div className="text-xs text-muted-foreground">الأزرار / الخيارات</div>}
-                      {btns.length > 0 && <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                        {btns.map((r) => (
-                          <div key={r.k} className="space-y-1">
-                            <Field key={r.k + (saved.get(r.k)?.updated_at ?? "")} row={r} saved={saved.get(r.k)} onSave={onSave(r.k)} />
-                            <button onClick={() => setAdding(r.k)} className="flex items-center gap-1 text-xs text-primary hover:underline"><Plus className="h-3 w-3" />إضافة خطوة بعد هذا الزر</button>
-                          </div>
-                        ))}
-                      </div>}
-                      {btns.map((r) => (
-                        <div key={"s" + r.k} className="space-y-2">
-                          {steps.filter((x) => x.trigger_key === r.k).map((x) => <div key={x.id}><div className="mb-1 text-xs text-muted-foreground">بعد زر «{r.o}»:</div><StepCard pw={pw} step={x} steps={steps} onChanged={() => void refetchSteps()} /></div>)}
-                          {adding === r.k && <StepEditor pw={pw} triggerKey={r.k} section={s} steps={steps} onDone={() => { setAdding(null); void refetchSteps(); }} />}
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })}
+              <div key={m} className="space-y-3 rounded-lg border bg-muted/20 p-2">
+                <div className="flex items-center gap-2 rounded-md bg-secondary px-3 py-2 text-secondary-foreground"><Zap className="h-4 w-4" /><b className="flex-1 text-sm">{t}</b><span className="text-xs text-muted-foreground">{sub}</span></div>
+                <Tree tree={tr} start={3} mark={m} saved={saved} onSave={onSave} />
               </div>
-            )}
+            ))}
           </div>
-        );
-      })}
+        </Fragment>}
+      </div>
     </div>
   );
 }
