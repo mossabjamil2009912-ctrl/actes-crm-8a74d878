@@ -74,6 +74,23 @@ const COM_TREE: typeof RES_TREE = [
   { title: "خيارات ما بعد عرض السعر", msg: [], btns: ["484bf23e3dd44054", "8a500db8ddc7b809", "8bb17c0836d361db", "49e61614093c2a7f"] },
   { title: "مسار الزيارة الميدانية", msg: ["2a8095893665df96", "2c9c04cda8067c14", "ee8f8449a33439a0", "aa74aeccb2ea78da", "4716baff87622087"], btns: ["49e61614093c2a7f"] },
 ];
+// Industrial quote path (approved plan): 14 stations.
+const IND_TREE: typeof RES_TREE = [
+  { title: "اختيار نوع المنظومة", msg: ["5f3a5397b45b53d7", "43496107d13ca096"], btns: ["3e8021ccc9fdb708", "be0ff08827145be4", "dff2de3b794789b3"] },
+  { title: "اسم المشروع أو المصنع", msg: ["04213971b6cd422a", "fe05d8c84f2b5a7a", "08cebc7cf6b7a18c"], btns: ["49e61614093c2a7f"] },
+  { title: "موقع المشروع", msg: [], btns: ["49e61614093c2a7f"], note: "قائمة المحافظات ثابتة داخل البوت." },
+  { title: "نوع النشاط الصناعي", msg: ["db015be4d9a89414", "90a0001df342e6f5", "a442fa39b3a2da6d"], btns: ["3e809abae64270ea", "be3a2d01c8055d81", "74a57aa64db81928", "855e5bd69a46e5e3", "13d94cd6486d3049", "49b560f99302689e", "66514b1009d0fbb3"] },
+  { title: "ساعات التشغيل (الورديات)", msg: ["cc615c5901bac3b8", "7b181c7bce18336d"], btns: ["0ff8032cf0bf1d35", "6588bc30ca4a0e3a", "ff7761b4d35dd1a6"] },
+  { title: "أوقات الورديات", msg: ["c83700c0108a6988", "d01165ceebe82f3d", "328fec9ecce17e78", "aa7b0bafe44f7543", "740ae4bb945f99e8", "3ef0cbf115786d58"], btns: ["49e61614093c2a7f"] },
+  { title: "طريقة إدخال الأحمال", msg: ["44dd7937961ba528", "abbeddc26bca8293", "5a341aec6063b8ac"], btns: ["e7084929a050ac9e", "9de647e82cdf300e", "c49e601e874712b2", "1067986d27697ced"] },
+  { title: "إجمالي الحمل التشغيلي", msg: ["3a29c5b7d97ea4c1"], btns: ["49e61614093c2a7f"] },
+  { title: "أكبر ماكينة منفردة", msg: ["6bfc398324c81bfc"], btns: ["49e61614093c2a7f"] },
+  { title: "محركات تيار الإقلاع العالي", msg: ["32210fb09bfcf81d", "6e3b5fba89476633"], btns: ["2e25a5a3f3602484", "ee63d54e81144d9a"] },
+  { title: "مصدر الكهرباء الحالي", msg: ["829b2889e3217ad7", "33ba1f6b42122436", "031fda8fed57607d", "c7c5f6e0aaba29e6", "e77df798e5671923", "4e7192be8fbf45aa", "eb36483bb29d8d54"], btns: ["3f1175301cc0c4a2", "5ed1ccf3315263c0", "d436992eebb929cc", "cd4dc6272a5153d4", "b622987744f8e476"] },
+  { title: "الهدف من المنظومة", msg: ["b23245bfa39d669a", "8a12db610f2dc494"], btns: ["3b8c25a45ea558d4", "c37b24d3a5235f92", "06dc98684a4f0026"] },
+  { title: "ملخص المنظومة واختيار الخطوة التالية", msg: ["f2b8e3219c9529c1"], btns: ["8a517ef606b599bf"], note: "أرقام الملخص تُحسب تلقائياً." },
+  { title: "خيارات ما بعد عرض السعر", msg: [], btns: ["484bf23e3dd44054", "8a500db8ddc7b809", "8bb17c0836d361db", "49e61614093c2a7f"] },
+];
 const BY_KEY = new Map(TEXTS.map((r) => [r.k, r]));
 
 function ResTree({ saved, onSave, tree = RES_TREE, label = "السكني" }: { tree?: typeof RES_TREE; label?: string; saved: Map<string, { value: string | null; desc_value: string | null; updated_at?: string }>; onSave: (k: string) => (v: string | null, d: string | null) => Promise<void> }) {
@@ -159,6 +176,7 @@ export function BotFlow({ pw }: { pw: string }) {
       </div>
       {!q.trim() && <ResTree saved={saved} onSave={onSave} />}
       {!q.trim() && <ResTree saved={saved} onSave={onSave} tree={COM_TREE} label="التجاري" />}
+      {!q.trim() && <ResTree saved={saved} onSave={onSave} tree={IND_TREE} label="الصناعي" />}
       <div className="space-y-2 rounded-xl border bg-card p-2">
         <div className="flex items-center gap-2"><b className="flex-1 text-sm text-primary">خطوات مستقلة (تُفتح من خطوات أخرى)</b>
           <button onClick={() => setAdding("__free")} className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-bold text-primary-foreground"><Plus className="h-3.5 w-3.5" />خطوة</button></div>
