@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Save, RotateCcw, ChevronDown, MessageSquareText, Check, MousePointerClick } from "lucide-react";
 import { listBotTexts, saveBotText } from "@/lib/crm.functions";
-import { Home, Store, Factory, Zap } from "lucide-react";
+import { Home, Store, Factory, Zap, Hand, ShoppingCart, Sun, Network } from "lucide-react";
 import { offlineQuery } from "@/lib/offline-cache";
 import ALL from "@/lib/bot-texts.json";
 
@@ -98,6 +98,21 @@ const IND_TREE: typeof RES_TREE = [
   { title: "خيارات ما بعد عرض السعر", msg: [], btns: ["484bf23e3dd44054", "8a500db8ddc7b809", "8bb17c0836d361db", "49e61614093c2a7f"] },
 ];
 const BY_KEY = new Map(TEXTS.map((r) => [r.k, r]));
+// Sections outside the quote trees: each bot message (m) becomes one step with its text parts and buttons.
+const sectionTree = (secs: string[]): typeof RES_TREE => {
+  const g = new Map<string, T[]>();
+  TEXTS.filter((r) => secs.includes(r.s)).forEach((r) => { if (!g.has(r.m)) g.set(r.m, []); g.get(r.m)!.push(r); });
+  return [...g.values()].map((rs) => {
+    const msg = rs.filter((r) => r.t !== "b").map((r) => r.k);
+    const btns = rs.filter((r) => r.t === "b").map((r) => r.k);
+    const first = (rs.find((r) => r.t !== "b") ?? rs[0]).o.replace(/[*_]/g, "").trim().split("\n")[0];
+    return { title: first.length > 40 ? first.slice(0, 40) + "…" : first || "رسالة", msg, btns };
+  });
+};
+const WEL_TREE = sectionTree(["الترحيب والقائمة الرئيسية"]);
+const BUY_TREE = sectionTree(["الشراء والدفع"]);
+const PVS_TREE = sectionTree(["دراسة PVsyst"]);
+const SLD_TREE = sectionTree(["مخطط SLD"]);
 
 type Saved = Map<string, { value: string | null; desc_value: string | null; updated_at?: string }>;
 type SaveFn = (k: string) => (v: string | null, d: string | null) => Promise<void>;
@@ -153,27 +168,31 @@ export function BotFlow({ pw }: { pw: string }) {
   const list = useServerFn(listBotTexts);
   const saveFn = useServerFn(saveBotText);
   const { data: rows = [], refetch } = useQuery(offlineQuery({ queryKey: ["bot-texts"], queryFn: () => list({ data: { pw } }) }));
-  const [sys, setSys] = useState<"res" | "com" | "ind">("res");
+  const [sys, setSys] = useState<"wel" | "res" | "com" | "ind" | "buy" | "pvs" | "sld">("wel");
   const saved = useMemo(() => new Map(rows.map((r) => [r.key, r])), [rows]);
   const onSave: SaveFn = (k) => async (value, desc_value) => {
     await saveFn({ data: { pw, key: k, value, desc_value } });
     await refetch();
   };
-  const TABS = [["res", "السكني", Home], ["com", "التجاري", Store], ["ind", "الصناعي", Factory]] as const;
+  const TABS = [["wel", "الترحيبية", Hand], ["res", "السكني", Home], ["com", "التجاري", Store], ["ind", "الصناعي", Factory], ["buy", "متابعة الشراء", ShoppingCart], ["pvs", "PVsyst", Sun], ["sld", "SLD", Network]] as const;
 
   return (
     <div dir="rtl" className="mx-auto max-w-4xl space-y-4 p-3">
       <div className="space-y-1">
-        <h2 className="text-lg font-bold text-foreground">مسار عرض السعر</h2>
+        <h2 className="text-lg font-bold text-foreground">مسار البوت</h2>
         <p className="text-sm text-muted-foreground">اضغط على أي خطوة لتعديل رسالتها وأسماء أزرارها، ثم اضغط حفظ — يصل التعديل للبوت من الرسالة التالية.</p>
       </div>
-      <div className="grid grid-cols-3 gap-1 rounded-xl border bg-muted p-1">
+      <div className="grid grid-cols-4 gap-1 rounded-xl sm:grid-cols-7 border bg-muted p-1">
         {TABS.map(([id, t, I]) => (
-          <button key={id} onClick={() => setSys(id)} className={`flex items-center justify-center gap-1.5 rounded-lg py-2 text-sm font-bold transition ${sys === id ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}><I className="h-4 w-4" />{t}</button>
+          <button key={id} onClick={() => setSys(id)} className={`flex items-center justify-center gap-1.5 rounded-lg px-1 py-2 text-xs font-bold transition ${sys === id ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:text-foreground"}`}><I className="h-4 w-4" />{t}</button>
         ))}
       </div>
       <div className="rounded-xl border bg-background p-3">
                 {sys === "res" && <Tree tree={RES_TREE} saved={saved} onSave={onSave} />}
+        {sys === "wel" && <Tree tree={WEL_TREE} saved={saved} onSave={onSave} />}
+        {sys === "buy" && <Tree tree={BUY_TREE} saved={saved} onSave={onSave} />}
+        {sys === "pvs" && <Tree tree={PVS_TREE} saved={saved} onSave={onSave} />}
+        {sys === "sld" && <Tree tree={SLD_TREE} saved={saved} onSave={onSave} />}
         {sys === "ind" && <Tree tree={IND_TREE} saved={saved} onSave={onSave} />}
         {sys === "com" && <Fragment>
           <Tree tree={COM_TREE} saved={saved} onSave={onSave} />
