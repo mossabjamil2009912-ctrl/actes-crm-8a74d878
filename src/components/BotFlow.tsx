@@ -2,7 +2,7 @@ import { useMemo, useState, useRef, Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Save, RotateCcw, ChevronDown, MessageSquareText, Check, MousePointerClick, Trash2 } from "lucide-react";
-import { listBotTexts, saveBotText } from "@/lib/crm.functions";
+import { listBotTexts, saveBotText, saveBotButtonDelete } from "@/lib/crm.functions";
 import { Home, Store, Factory, Zap, Hand, ShoppingCart, Sun, Network, ImageIcon } from "lucide-react";
 import { HeaderImage } from "@/components/HeaderImage";
 import { offlineQuery } from "@/lib/offline-cache";
@@ -16,7 +16,7 @@ const DEL = "__DEL__";
 // Keep the original leading/trailing spaces and line breaks so the message layout stays intact.
 const edges = (s: string) => { const m = s.match(/^(\s*)([\s\S]*?)(\s*)$/)!; return [m[1] ?? "", m[2] ?? "", m[3] ?? ""] as const; };
 
-function Field({ row, saved, onSave }: { row: T; saved: { value: string | null; desc_value: string | null } | undefined; onSave: (v: string | null, d: string | null) => Promise<void> }) {
+function Field({ row, saved, onSave, del }: { row: T; saved: { value: string | null; desc_value: string | null } | undefined; onSave: (v: string | null, d: string | null) => Promise<void>; del?: { deleted: boolean; set: (on: boolean) => Promise<void> } }) {
   const [lead, core, trail] = edges(row.o);
   const cur = saved?.value != null && saved.value !== DEL ? edges(saved.value)[1] : core;
   const [v, setV] = useState(cur);
@@ -34,15 +34,15 @@ function Field({ row, saved, onSave }: { row: T; saved: { value: string | null; 
   };
   return (
     <div className={`flex items-start gap-1.5 ${isBtn ? "" : "w-full"}`}>
-      {isBtn && saved?.value === DEL ? (
+      {isBtn && del?.deleted ? (
         <div className="flex flex-1 items-center gap-1 rounded-full border border-dashed px-3 py-1 text-sm text-muted-foreground">
           <span className="flex-1 text-center line-through opacity-60">{core}</span>
-          <button disabled={busy} onClick={async () => { await save(null, null); setV(core); }} className="flex items-center gap-1 text-xs font-semibold text-primary"><RotateCcw className="h-3.5 w-3.5" />استرجاع</button>
+          <button disabled={busy} onClick={async () => { setBusy(true); try { await del!.set(false); } catch (e) { alert((e as Error).message); } finally { setBusy(false); } }} className="flex items-center gap-1 text-xs font-semibold text-primary"><RotateCcw className="h-3.5 w-3.5" />استرجاع</button>
         </div>
       ) : isBtn ? (
         <div className="relative flex-1 space-y-1" onPointerDown={() => { timer.current = setTimeout(() => setMenu(true), 700); }} onPointerUp={() => clearTimeout(timer.current)} onPointerLeave={() => clearTimeout(timer.current)} onContextMenu={(e) => e.preventDefault()}>
           {menu && <div className="absolute -top-10 left-1/2 z-10 flex -translate-x-1/2 gap-1 rounded-lg border bg-popover p-1 shadow-lg">
-            <button onClick={async () => { setMenu(false); await save(DEL, null); }} className="flex items-center gap-1 rounded-md bg-destructive px-3 py-1 text-xs font-bold text-destructive-foreground"><Trash2 className="h-3.5 w-3.5" />حذف</button>
+            <button onClick={async () => { setMenu(false); setBusy(true); try { await del?.set(true); } catch (e) { alert((e as Error).message); } finally { setBusy(false); } }} className="flex items-center gap-1 rounded-md bg-destructive px-3 py-1 text-xs font-bold text-destructive-foreground"><Trash2 className="h-3.5 w-3.5" />حذف</button>
             <button onClick={() => setMenu(false)} className="rounded-md px-2 py-1 text-xs text-muted-foreground">إلغاء</button>
           </div>}
           <input value={v} maxLength={20} onChange={(e) => setV(e.target.value)} aria-label="اسم الزر"
@@ -133,17 +133,26 @@ const SLD_TREE: typeof RES_TREE = [
 
 type Saved = Map<string, { value: string | null; desc_value: string | null; updated_at?: string }>;
 type SaveFn = (k: string) => (v: string | null, d: string | null) => Promise<void>;
+type DelFn = (k: string, st: (typeof RES_TREE)[number], on: boolean) => Promise<void>;
+// A button deleted in one step is stored under "<button key>@<step id>", so it disappears only from that step.
+const stepId = (st: { msg: string[]; btns: string[]; fixed?: string[]; title: string }) => {
+  const src = [st.title, ...st.msg, ...st.btns, ...(st.fixed ?? [])].join("|");
+  let h = 5381; for (let i = 0; i < src.length; i++) h = ((h * 33) ^ src.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+};
+export const scopedKey = (k: string, st: Parameters<typeof stepId>[0]) => `${k}@${stepId(st)}`;
 
-function Node({ st, n, saved, onSave, last }: { st: (typeof RES_TREE)[number]; n: string; saved: Saved; onSave: SaveFn; last: boolean }) {
+function Node({ st, n, saved, onSave, onDel, last }: { st: (typeof RES_TREE)[number]; n: string; saved: Saved; onSave: SaveFn; onDel: DelFn; last: boolean }) {
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const [busy, setBusy] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const keys = [...st.msg, ...st.btns];
-  const deleted = keys.length > 0 && keys.every((k) => saved.get(k)?.value === DEL);
+  const isDel = (k: string) => st.btns.includes(k) ? saved.has(scopedKey(k, st)) || saved.get(k)?.value === DEL : saved.get(k)?.value === DEL;
+  const deleted = keys.length > 0 && keys.every(isDel);
   const setAll = async (v: string | null) => {
     setBusy(true); setMenu(false);
-    try { for (const k of keys) await onSave(k)(v, null); } catch (e) { alert((e as Error).message); } finally { setBusy(false); }
+    try { for (const k of st.msg) await onSave(k)(v, null); for (const k of st.btns) await onDel(k, st, v === DEL); } catch (e) { alert((e as Error).message); } finally { setBusy(false); }
   };
   const txt = (k: string) => { const v = saved.get(k)?.value; return (v != null && v !== DEL ? v : BY_KEY.get(k)?.o ?? "").trim(); };
   if (deleted) return (
@@ -184,7 +193,7 @@ function Node({ st, n, saved, onSave, last }: { st: (typeof RES_TREE)[number]; n
             {(st.btns.length > 0 || st.fixed) && <div className="space-y-2">
               <div className="flex items-center gap-1 text-xs font-semibold text-muted-foreground"><MousePointerClick className="h-3.5 w-3.5" />الأزرار</div>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                {st.btns.map((k) => { const r = BY_KEY.get(k); return r ? <Field key={k + (saved.get(k)?.updated_at ?? "")} row={r} saved={saved.get(k)} onSave={onSave(k)} /> : null; })}
+                {st.btns.map((k) => { const r = BY_KEY.get(k); return r ? <Field key={k + (saved.get(k)?.updated_at ?? "")} row={r} saved={saved.get(k)} onSave={onSave(k)} del={{ deleted: isDel(k), set: (on) => onDel(k, st, on) }} /> : null; })}
               </div>
               {st.fixed && <div className="flex flex-wrap gap-2">{st.fixed.map((f) => <span key={f} className="rounded-full border bg-background px-3 py-1 text-xs text-foreground">{f}</span>)}</div>}
             </div>}
@@ -196,10 +205,10 @@ function Node({ st, n, saved, onSave, last }: { st: (typeof RES_TREE)[number]; n
   );
 }
 
-function Tree({ tree, start = 0, mark = "", saved, onSave }: { tree: typeof RES_TREE; start?: number; mark?: string; saved: Saved; onSave: SaveFn }) {
+function Tree({ tree, start = 0, mark = "", saved, onSave, onDel }: { tree: typeof RES_TREE; start?: number; mark?: string; saved: Saved; onSave: SaveFn; onDel: DelFn }) {
   return (
     <ol className="space-y-3">
-      {tree.map((st, i) => <Node key={i} st={st} n={`${i + 1 + start}${mark}`} last={i === tree.length - 1} saved={saved} onSave={onSave} />)}
+      {tree.map((st, i) => <Node key={i} st={st} n={`${i + 1 + start}${mark}`} last={i === tree.length - 1} saved={saved} onSave={onSave} onDel={onDel} />)}
     </ol>
   );
 }
@@ -212,6 +221,13 @@ export function BotFlow({ pw }: { pw: string }) {
   const saved = useMemo(() => new Map(rows.map((r) => [r.key, r])), [rows]);
   const onSave: SaveFn = (k) => async (value, desc_value) => {
     await saveFn({ data: { pw, key: k, value, desc_value } });
+    await refetch();
+  };
+  const delFn = useServerFn(saveBotButtonDelete);
+  const onDel: DelFn = async (k, st, on) => {
+    await delFn({ data: { pw, key: k, scoped: scopedKey(k, st), on, msg: st.msg, sibs: st.btns.filter((b) => b !== k), fixed: st.fixed ?? [] } });
+    // Old-style delete (from every step) is cleared when the button is restored.
+    if (!on && saved.get(k)?.value === DEL) await saveFn({ data: { pw, key: k, value: null, desc_value: null } });
     await refetch();
   };
   const TABS = [["wel", "الترحيبية", Hand], ["res", "السكني", Home], ["com", "التجاري", Store], ["ind", "الصناعي", Factory], ["buy", "متابعة الشراء", ShoppingCart], ["pvs", "PVsyst", Sun], ["sld", "SLD", Network], ["img", "صورة الترويسة", ImageIcon]] as const;
@@ -228,21 +244,21 @@ export function BotFlow({ pw }: { pw: string }) {
         ))}
       </div>
       <div className="rounded-xl border bg-background p-3">
-                {sys === "res" && <Tree tree={RES_TREE} saved={saved} onSave={onSave} />}
-        {sys === "wel" && <Tree tree={WEL_TREE} saved={saved} onSave={onSave} />}
-        {sys === "buy" && <Tree tree={BUY_TREE} saved={saved} onSave={onSave} />}
-        {sys === "pvs" && <Tree tree={PVS_TREE} saved={saved} onSave={onSave} />}
-        {sys === "sld" && <Tree tree={SLD_TREE} saved={saved} onSave={onSave} />}
+                {sys === "res" && <Tree tree={RES_TREE} saved={saved} onSave={onSave} onDel={onDel} />}
+        {sys === "wel" && <Tree tree={WEL_TREE} saved={saved} onSave={onSave} onDel={onDel} />}
+        {sys === "buy" && <Tree tree={BUY_TREE} saved={saved} onSave={onSave} onDel={onDel} />}
+        {sys === "pvs" && <Tree tree={PVS_TREE} saved={saved} onSave={onSave} onDel={onDel} />}
+        {sys === "sld" && <Tree tree={SLD_TREE} saved={saved} onSave={onSave} onDel={onDel} />}
         {sys === "img" && <HeaderImage pw={pw} />}
-        {sys === "ind" && <Tree tree={IND_TREE} saved={saved} onSave={onSave} />}
+        {sys === "ind" && <Tree tree={IND_TREE} saved={saved} onSave={onSave} onDel={onDel} />}
         {sys === "com" && <Fragment>
-          <Tree tree={COM_TREE} saved={saved} onSave={onSave} />
+          <Tree tree={COM_TREE} saved={saved} onSave={onSave} onDel={onDel} />
           <div className="my-4 flex items-center gap-2 text-xs font-semibold text-muted-foreground"><span className="h-px flex-1 bg-border" />يتفرع حسب الاستهلاك<span className="h-px flex-1 bg-border" /></div>
           <div className="grid gap-4 md:grid-cols-2">
             {([[COM_LV, "أ", "الجهد المنخفض (LV)", "حتى 20kW"], [COM_HV, "ب", "الجهد العالي (HV)", "أكبر من 20kW"]] as const).map(([tr, m, t, sub]) => (
               <div key={m} className="space-y-3 rounded-lg border bg-muted/20 p-2">
                 <div className="flex items-center gap-2 rounded-md bg-secondary px-3 py-2 text-secondary-foreground"><Zap className="h-4 w-4" /><b className="flex-1 text-sm">{t}</b><span className="text-xs text-muted-foreground">{sub}</span></div>
-                <Tree tree={tr} start={4} mark={m} saved={saved} onSave={onSave} />
+                <Tree tree={tr} start={4} mark={m} saved={saved} onSave={onSave} onDel={onDel} />
               </div>
             ))}
           </div>

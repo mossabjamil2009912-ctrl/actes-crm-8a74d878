@@ -38,9 +38,11 @@ export const Route = createFileRoute("/api/public/bot-catalog")({
         try { fv = fr?.text_value ? JSON.parse(fr.text_value) : null; } catch { fv = null; }
         const FORMULAS = mergeFormulas(fv);
         // Edited bot texts from the "المسار" screen: TEXT = [original fragment, new], BTN = [button id, original title, new title, new desc].
-        const { data: bt } = await supabaseAdmin.from("bot_texts").select("kind,original,value,btn_id,desc_value");
-        const BOT_TEXTS = { TEXT: [] as [string, string][], BTN: [] as [string, string, string | null, string | null][] };
+        const { data: bt } = await supabaseAdmin.from("bot_texts").select("key,kind,original,value,btn_id,desc_value,place");
+        const BOT_TEXTS = { TEXT: [] as [string, string][], BTN: [] as [string, string, string | null, string | null][], DEL: [] as [string, string, { msg: string[]; sibs: string[] }][] };
         for (const r of bt ?? []) {
+          // Per-step deletes: [button id, original title, scope] — the bot drops the button only in matching messages.
+          if (r.kind === "button" && r.key.includes("@")) { try { BOT_TEXTS.DEL.push([r.btn_id ?? "", r.original, JSON.parse(r.place ?? "{}")]); } catch { /* skip bad scope */ } continue; }
           if (r.kind === "button") BOT_TEXTS.BTN.push([r.btn_id ?? "", r.original, r.value, r.desc_value]);
           else if (r.value != null) BOT_TEXTS.TEXT.push([r.original, r.value === "__DEL__" ? "" : r.value]); // deleted step text is dropped
         }
