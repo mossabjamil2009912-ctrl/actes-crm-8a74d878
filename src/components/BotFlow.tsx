@@ -64,16 +64,20 @@ const RES_TREE: { title: string; msg: string[]; btns: string[]; note?: string }[
 const COM_TREE: typeof RES_TREE = [
   { title: "اختيار نوع المنظومة", msg: ["5f3a5397b45b53d7", "43496107d13ca096"], btns: ["3e8021ccc9fdb708", "be0ff08827145be4", "dff2de3b794789b3"] },
   { title: "طريقة إدخال الاستهلاك", msg: ["f59fc2fbde4d4139"], btns: ["bc6b06e11dd584c3", "da5bde195f4ac7d9", "87da7c0b23278abf", "49e61614093c2a7f"] },
-  { title: "إدخال قيمة الاستهلاك", msg: ["2e0057c20a9e6656", "75e9f26980fc0454", "769ebb2a960c6fd9"], btns: ["49e61614093c2a7f"], note: "رسالة واحدة تظهر حسب الطريقة: فاتورة / كيلووات / ديزل." },
-  { title: "نمط الاستخدام", msg: ["14396d9b58cf5304", "0ded4780a60eaa29"], btns: ["77d0b52a0182f3a2", "2b18ee871f40b0fd", "ac0b2da7a98be976", "49e61614093c2a7f"] },
-  { title: "طريقة تحديد الإنفرتر", msg: [], btns: ["49e61614093c2a7f"], note: "رسالة وأزرار «الحمل في الساعة / اختيار الإنفرتر» ثابتة داخل البوت حالياً." },
-  { title: "إدخال الحمل أو اختيار قدرة الإنفرتر", msg: ["0069cb23b5a0ae8a", "a2cf5ae56ed8224f"], btns: ["49e61614093c2a7f"], note: "قائمة القدرات تُبنى تلقائياً من الأصناف." },
-  { title: "نوع بطاريات التخزين", msg: [], btns: ["49e61614093c2a7f"], note: "أسماء البطاريات تأتي من الأصناف — عدّلها من شاشة الأصناف." },
-  { title: "ملخص المنظومة المقترحة", msg: ["e5e513b9703cd7a9"], btns: ["cca78d5e7f57d233", "2dd4e1a26d82b5c8", "49e61614093c2a7f"] },
-  { title: "اسم العميل أو المنشأة", msg: ["1b9f2bd45379d795"], btns: ["49e61614093c2a7f"], note: "زر «الاسم المسجل سابقاً» يظهر تلقائياً باسم العميل." },
-  { title: "خيارات ما بعد عرض السعر", msg: [], btns: ["484bf23e3dd44054", "8a500db8ddc7b809", "8bb17c0836d361db", "49e61614093c2a7f"] },
-  { title: "مسار الزيارة الميدانية", msg: ["2a8095893665df96", "2c9c04cda8067c14", "ee8f8449a33439a0", "aa74aeccb2ea78da", "4716baff87622087"], btns: ["49e61614093c2a7f"] },
+  { title: "إدخال قيمة الاستهلاك", msg: ["2e0057c20a9e6656", "75e9f26980fc0454", "769ebb2a960c6fd9"], btns: ["49e61614093c2a7f"], note: "بعدها يتفرع المسار حسب الاستهلاك: جهد منخفض أو جهد عالي." },
 ];
+const comBranch = (lv: boolean): typeof RES_TREE => [
+  { title: "طريقة تحديد الإنفرتر", msg: [], btns: ["49e61614093c2a7f"], note: "رسالة وأزرار «الحمل في الساعة / اختيار الإنفرتر» ثابتة داخل البوت حالياً." },
+  { title: lv ? "اختيار قدرة الإنفرتر (6–20 kW)" : "اختيار قدرة الإنفرتر (30–125 kW)", msg: ["0069cb23b5a0ae8a", "a2cf5ae56ed8224f"], btns: ["49e61614093c2a7f"], note: "قائمة القدرات تُبنى تلقائياً من الأصناف." },
+  { title: "نمط الاستخدام", msg: ["14396d9b58cf5304", "0ded4780a60eaa29"], btns: ["77d0b52a0182f3a2", "2b18ee871f40b0fd", "ac0b2da7a98be976", "49e61614093c2a7f"] },
+  lv
+    ? { title: "اختيار نوع البطارية", msg: [], btns: ["49e61614093c2a7f"], note: "Hithium 16kWh / Fidus 16kWh — الأسماء من شاشة الأصناف." }
+    : { title: "اختيار نظام التخزين والكبائن", msg: [], btns: ["49e61614093c2a7f"], note: "راكات Hithium 112S / Pylontech / كبائن — الأسماء من شاشة الأصناف." },
+  { title: "ملخص المنظومة المقترحة", msg: ["e5e513b9703cd7a9"], btns: ["cca78d5e7f57d233", "2dd4e1a26d82b5c8", "49e61614093c2a7f"] },
+  { title: "خيارات ما بعد عرض السعر", msg: [], btns: ["484bf23e3dd44054", "8a500db8ddc7b809", "8bb17c0836d361db", "49e61614093c2a7f"] },
+];
+const COM_LV = comBranch(true);
+const COM_HV = comBranch(false);
 // Industrial quote path (approved plan): 14 stations.
 const IND_TREE: typeof RES_TREE = [
   { title: "اختيار نوع المنظومة", msg: ["5f3a5397b45b53d7", "43496107d13ca096"], btns: ["3e8021ccc9fdb708", "be0ff08827145be4", "dff2de3b794789b3"] },
@@ -93,7 +97,7 @@ const IND_TREE: typeof RES_TREE = [
 ];
 const BY_KEY = new Map(TEXTS.map((r) => [r.k, r]));
 
-function ResTree({ saved, onSave, tree = RES_TREE, label = "السكني" }: { tree?: typeof RES_TREE; label?: string; saved: Map<string, { value: string | null; desc_value: string | null; updated_at?: string }>; onSave: (k: string) => (v: string | null, d: string | null) => Promise<void> }) {
+function ResTree({ saved, onSave, tree = RES_TREE, label = "السكني", start = 0, mark = "" }: { tree?: typeof RES_TREE; label?: string; start?: number; mark?: string; saved: Map<string, { value: string | null; desc_value: string | null; updated_at?: string }>; onSave: (k: string) => (v: string | null, d: string | null) => Promise<void> }) {
   const [open, setOpen] = useState<number | null>(null);
   return (
     <div className="rounded-xl border bg-card p-2">
@@ -107,7 +111,7 @@ function ResTree({ saved, onSave, tree = RES_TREE, label = "السكني" }: { t
             <li key={i} className="relative">
               <span className="absolute -right-[1.15rem] top-3 h-3 w-3 rounded-full border-2 border-primary bg-background" />
               <button onClick={() => setOpen(isOpen ? null : i)} className="flex w-full items-center gap-2 rounded-lg border bg-background p-2 text-right text-sm font-semibold">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">{i + 1}</span>
+                <span className="flex h-6 min-w-6 px-1 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">{i + 1 + start}{mark}</span>
                 <span className="flex-1">{st.title}</span>
                 {edited > 0 && <span className="rounded-full bg-primary/15 px-2 text-xs text-primary">{edited} معدّل</span>}
                 <ChevronLeft className={`h-4 w-4 transition-transform ${isOpen ? "-rotate-90" : ""}`} />
@@ -175,7 +179,7 @@ export function BotFlow({ pw }: { pw: string }) {
           className="w-full rounded-lg border border-input bg-background py-2 pl-3 pr-9 text-sm outline-none focus:ring-2 focus:ring-ring" />
       </div>
       {!q.trim() && <ResTree saved={saved} onSave={onSave} />}
-      {!q.trim() && <ResTree saved={saved} onSave={onSave} tree={COM_TREE} label="التجاري" />}
+      {!q.trim() && <div className="space-y-2"><ResTree saved={saved} onSave={onSave} tree={COM_TREE} label="التجاري" /><div className="grid gap-2 md:grid-cols-2"><ResTree saved={saved} onSave={onSave} tree={COM_LV} label="التجاري ← جهد منخفض Low Voltage (حتى 20kW)" start={3} mark="أ" /><ResTree saved={saved} onSave={onSave} tree={COM_HV} label="التجاري ← جهد عالي High Voltage (أكبر من 20kW)" start={3} mark="ب" /></div></div>}
       {!q.trim() && <ResTree saved={saved} onSave={onSave} tree={IND_TREE} label="الصناعي" />}
       <div className="space-y-2 rounded-xl border bg-card p-2">
         <div className="flex items-center gap-2"><b className="flex-1 text-sm text-primary">خطوات مستقلة (تُفتح من خطوات أخرى)</b>
