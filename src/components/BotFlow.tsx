@@ -1,7 +1,7 @@
-import { useMemo, useState, Fragment } from "react";
+import { useMemo, useState, useRef, Fragment } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Save, RotateCcw, ChevronDown, MessageSquareText, Check, MousePointerClick } from "lucide-react";
+import { Save, RotateCcw, ChevronDown, MessageSquareText, Check, MousePointerClick, Trash2 } from "lucide-react";
 import { listBotTexts, saveBotText } from "@/lib/crm.functions";
 import { Home, Store, Factory, Zap, Hand, ShoppingCart, Sun, Network } from "lucide-react";
 import { offlineQuery } from "@/lib/offline-cache";
@@ -9,28 +9,41 @@ import ALL from "@/lib/bot-texts.json";
 
 type T = { k: string; m: string; t: string; s: string; o: string; b?: string; d?: string };
 const TEXTS = ALL as T[];
+// Sentinel stored as a button's value: the bot drops that button (n8n "ACTES المسار" layer).
+const DEL = "__DEL__";
 
 // Keep the original leading/trailing spaces and line breaks so the message layout stays intact.
 const edges = (s: string) => { const m = s.match(/^(\s*)([\s\S]*?)(\s*)$/)!; return [m[1] ?? "", m[2] ?? "", m[3] ?? ""] as const; };
 
 function Field({ row, saved, onSave }: { row: T; saved: { value: string | null; desc_value: string | null } | undefined; onSave: (v: string | null, d: string | null) => Promise<void> }) {
   const [lead, core, trail] = edges(row.o);
-  const cur = saved?.value != null ? edges(saved.value)[1] : core;
+  const cur = saved?.value != null && saved.value !== DEL ? edges(saved.value)[1] : core;
   const [v, setV] = useState(cur);
   const [d, setD] = useState(saved?.desc_value ?? row.d ?? "");
   const [busy, setBusy] = useState(false);
   const [ok, setOk] = useState(false);
   const isBtn = row.t === "b";
+  const [menu, setMenu] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const changed = v !== cur || (isBtn && row.d != null && d !== (saved?.desc_value ?? row.d));
-  const edited = saved != null;
+  const edited = saved != null && saved.value !== DEL;
   const save = async (val: string | null, desc: string | null) => {
     setBusy(true);
     try { await onSave(val, desc); setOk(true); setTimeout(() => setOk(false), 1500); } catch (e) { alert((e as Error).message); } finally { setBusy(false); }
   };
   return (
     <div className={`flex items-start gap-1.5 ${isBtn ? "" : "w-full"}`}>
-      {isBtn ? (
-        <div className="flex-1 space-y-1">
+      {isBtn && saved?.value === DEL ? (
+        <div className="flex flex-1 items-center gap-1 rounded-full border border-dashed px-3 py-1 text-sm text-muted-foreground">
+          <span className="flex-1 text-center line-through opacity-60">{core}</span>
+          <button disabled={busy} onClick={async () => { await save(null, null); setV(core); }} className="flex items-center gap-1 text-xs font-semibold text-primary"><RotateCcw className="h-3.5 w-3.5" />استرجاع</button>
+        </div>
+      ) : isBtn ? (
+        <div className="relative flex-1 space-y-1" onPointerDown={() => { timer.current = setTimeout(() => setMenu(true), 700); }} onPointerUp={() => clearTimeout(timer.current)} onPointerLeave={() => clearTimeout(timer.current)} onContextMenu={(e) => e.preventDefault()}>
+          {menu && <div className="absolute -top-10 left-1/2 z-10 flex -translate-x-1/2 gap-1 rounded-lg border bg-popover p-1 shadow-lg">
+            <button onClick={async () => { setMenu(false); await save(DEL, null); }} className="flex items-center gap-1 rounded-md bg-destructive px-3 py-1 text-xs font-bold text-destructive-foreground"><Trash2 className="h-3.5 w-3.5" />حذف</button>
+            <button onClick={() => setMenu(false)} className="rounded-md px-2 py-1 text-xs text-muted-foreground">إلغاء</button>
+          </div>}
           <input value={v} maxLength={20} onChange={(e) => setV(e.target.value)} aria-label="اسم الزر"
             className={`w-full rounded-full border px-3 py-1 text-center text-sm font-semibold text-primary outline-none focus:ring-2 focus:ring-ring ${edited ? "border-primary bg-primary/5" : "border-input bg-background"}`} />
           {row.d != null && <input value={d} maxLength={72} onChange={(e) => setD(e.target.value)} aria-label="وصف الخيار" className="w-full rounded border border-input bg-background px-2 py-0.5 text-xs text-muted-foreground" />}
@@ -180,7 +193,7 @@ export function BotFlow({ pw }: { pw: string }) {
     <div dir="rtl" className="mx-auto max-w-4xl space-y-4 p-3">
       <div className="space-y-1">
         <h2 className="text-lg font-bold text-foreground">مسار البوت</h2>
-        <p className="text-sm text-muted-foreground">اضغط على أي خطوة لتعديل رسالتها وأسماء أزرارها، ثم اضغط حفظ — يصل التعديل للبوت من الرسالة التالية.</p>
+        <p className="text-sm text-muted-foreground">اضغط على أي خطوة لتعديل رسالتها وأسماء أزرارها، ثم اضغط حفظ. اضغط مطولاً على أي زر لحذفه — يصل التعديل للبوت من الرسالة التالية.</p>
       </div>
       <div className="grid grid-cols-4 gap-1 rounded-xl sm:grid-cols-7 border bg-muted p-1">
         {TABS.map(([id, t, I]) => (
