@@ -50,6 +50,56 @@ function Field({ row, saved, onSave }: { row: T; saved: { value: string | null; 
   );
 }
 
+// Residential quote path as the customer sees it: 7 stations, each with its message parts and buttons.
+const RES_TREE: { title: string; msg: string[]; btns: string[]; note?: string }[] = [
+  { title: "اختيار نوع المنظومة", msg: ["5f3a5397b45b53d7", "43496107d13ca096"], btns: ["3e8021ccc9fdb708", "be0ff08827145be4", "dff2de3b794789b3"] },
+  { title: "طلب قيمة الفاتورة الشهرية", msg: ["25241f77f16c8dc4"], btns: ["b475509fe976959b"] },
+  { title: "نمط الاستخدام (نهار / ليل)", msg: ["14396d9b58cf5304", "0ded4780a60eaa29"], btns: ["2b18ee871f40b0fd", "ac0b2da7a98be976", "49e61614093c2a7f"] },
+  { title: "اختيار نوع البطارية", msg: [], btns: ["49e61614093c2a7f"], note: "أسماء البطاريات (UF5000 / Fidus Pro) تأتي من الأصناف — عدّلها من شاشة الأصناف." },
+  { title: "ملخص المنظومة المقترحة", msg: ["c70260d1503cbd9e", "2eaea7b9b7d0c673"], btns: ["9d7fbbbf88df922f", "49e61614093c2a7f"] },
+  { title: "إدخال اسم العميل", msg: ["1b9f2bd45379d795"], btns: ["49e61614093c2a7f"], note: "زر «الاسم المسجل سابقاً» يظهر تلقائياً باسم العميل." },
+  { title: "خيارات ما بعد عرض السعر", msg: [], btns: ["484bf23e3dd44054", "8a500db8ddc7b809", "8bb17c0836d361db", "49e61614093c2a7f"] },
+];
+const BY_KEY = new Map(TEXTS.map((r) => [r.k, r]));
+
+function ResTree({ saved, onSave }: { saved: Map<string, { value: string | null; desc_value: string | null; updated_at?: string }>; onSave: (k: string) => (v: string | null, d: string | null) => Promise<void> }) {
+  const [open, setOpen] = useState<number | null>(null);
+  return (
+    <div className="rounded-xl border bg-card p-2">
+      <div className="p-1 text-sm font-bold text-primary">مسار عرض السعر — السكني</div>
+      <ol className="relative space-y-2 border-r-2 border-primary/30 pr-3">
+        {RES_TREE.map((st, i) => {
+          const keys = [...st.msg, ...st.btns];
+          const edited = keys.filter((k) => saved.has(k)).length;
+          const isOpen = open === i;
+          return (
+            <li key={i} className="relative">
+              <span className="absolute -right-[1.15rem] top-3 h-3 w-3 rounded-full border-2 border-primary bg-background" />
+              <button onClick={() => setOpen(isOpen ? null : i)} className="flex w-full items-center gap-2 rounded-lg border bg-background p-2 text-right text-sm font-semibold">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">{i + 1}</span>
+                <span className="flex-1">{st.title}</span>
+                {edited > 0 && <span className="rounded-full bg-primary/15 px-2 text-xs text-primary">{edited} معدّل</span>}
+                <ChevronLeft className={`h-4 w-4 transition-transform ${isOpen ? "-rotate-90" : ""}`} />
+              </button>
+              {isOpen && (
+                <div className="mt-1 space-y-2 rounded-lg border bg-muted/30 p-2">
+                  {st.msg.length > 0 && <div className="flex items-center gap-1 text-xs text-muted-foreground"><MessageSquareText className="h-3.5 w-3.5" />الرسالة</div>}
+                  {st.msg.map((k) => { const r = BY_KEY.get(k); return r ? <Field key={k + (saved.get(k)?.updated_at ?? "")} row={r} saved={saved.get(k)} onSave={onSave(k)} /> : null; })}
+                  <div className="text-xs text-muted-foreground">الأزرار</div>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {st.btns.map((k) => { const r = BY_KEY.get(k); return r ? <Field key={k + (saved.get(k)?.updated_at ?? "")} row={r} saved={saved.get(k)} onSave={onSave(k)} /> : null; })}
+                  </div>
+                  {st.note && <p className="text-xs text-muted-foreground">{st.note}</p>}
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
 export function BotFlow({ pw }: { pw: string }) {
   const list = useServerFn(listBotTexts);
   const saveFn = useServerFn(saveBotText);
@@ -93,6 +143,7 @@ export function BotFlow({ pw }: { pw: string }) {
         <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="ابحث عن كلمة في رسالة أو زر..." aria-label="بحث"
           className="w-full rounded-lg border border-input bg-background py-2 pl-3 pr-9 text-sm outline-none focus:ring-2 focus:ring-ring" />
       </div>
+      {!q.trim() && <ResTree saved={saved} onSave={onSave} />}
       <div className="space-y-2 rounded-xl border bg-card p-2">
         <div className="flex items-center gap-2"><b className="flex-1 text-sm text-primary">خطوات مستقلة (تُفتح من خطوات أخرى)</b>
           <button onClick={() => setAdding("__free")} className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-bold text-primary-foreground"><Plus className="h-3.5 w-3.5" />خطوة</button></div>
