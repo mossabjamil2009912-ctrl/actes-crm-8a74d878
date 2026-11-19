@@ -42,7 +42,7 @@ export const Route = createFileRoute("/api/public/bot-catalog")({
         const BOT_TEXTS = { TEXT: [] as [string, string][], BTN: [] as [string, string, string | null, string | null][] };
         for (const r of bt ?? []) {
           if (r.kind === "button") BOT_TEXTS.BTN.push([r.btn_id ?? "", r.original, r.value, r.desc_value]);
-          else if (r.value != null) BOT_TEXTS.TEXT.push([r.original, r.value]);
+          else if (r.value != null) BOT_TEXTS.TEXT.push([r.original, r.value === "__DEL__" ? "" : r.value]); // deleted step text is dropped
         }
         BOT_TEXTS.TEXT.sort((a, b) => b[0].length - a[0].length);
         // Added steps: shown when the customer presses trigger_id (title matched against original or edited title).

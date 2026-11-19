@@ -132,7 +132,26 @@ type SaveFn = (k: string) => (v: string | null, d: string | null) => Promise<voi
 
 function Node({ st, n, saved, onSave, last }: { st: (typeof RES_TREE)[number]; n: string; saved: Saved; onSave: SaveFn; last: boolean }) {
   const [open, setOpen] = useState(false);
-  const txt = (k: string) => (saved.get(k)?.value ?? BY_KEY.get(k)?.o ?? "").trim();
+  const [menu, setMenu] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const keys = [...st.msg, ...st.btns];
+  const deleted = keys.length > 0 && keys.every((k) => saved.get(k)?.value === DEL);
+  const setAll = async (v: string | null) => {
+    setBusy(true); setMenu(false);
+    try { for (const k of keys) await onSave(k)(v, null); } catch (e) { alert((e as Error).message); } finally { setBusy(false); }
+  };
+  const txt = (k: string) => { const v = saved.get(k)?.value; return (v != null && v !== DEL ? v : BY_KEY.get(k)?.o ?? "").trim(); };
+  if (deleted) return (
+    <li className="relative pr-10">
+      <span className="absolute right-0 top-1 flex h-7 min-w-7 items-center justify-center rounded-full border-2 border-dashed border-muted-foreground bg-card px-1 text-xs font-bold text-muted-foreground">{n}</span>
+      <div className="flex items-center gap-2 rounded-lg border border-dashed bg-muted/40 p-3">
+        <span className="flex-1 text-sm text-muted-foreground line-through">{st.title}</span>
+        <span className="text-[11px] text-muted-foreground">خطوة محذوفة</span>
+        <button disabled={busy} onClick={() => setAll(null)} className="flex items-center gap-1 text-xs font-semibold text-primary"><RotateCcw className="h-3.5 w-3.5" />استرجاع</button>
+      </div>
+    </li>
+  );
   const edited = [...st.msg, ...st.btns].filter((k) => saved.has(k)).length;
   const preview = st.msg.map(txt).filter(Boolean).join(" … ");
   return (
@@ -140,7 +159,11 @@ function Node({ st, n, saved, onSave, last }: { st: (typeof RES_TREE)[number]; n
       {!last && <span className="absolute right-[0.9rem] top-8 bottom-[-0.75rem] w-px bg-border" aria-hidden />}
       <span className="absolute right-0 top-1 flex h-7 min-w-7 items-center justify-center rounded-full border-2 border-primary bg-card px-1 text-xs font-bold text-primary">{n}</span>
       <div className={`rounded-lg border bg-card shadow-sm transition ${open ? "border-primary/40" : ""}`}>
-        <button onClick={() => setOpen(!open)} className="flex w-full items-start gap-2 p-3 text-right">
+        {menu && <div className="flex items-center justify-center gap-2 border-b bg-popover p-2">
+          <button disabled={busy} onClick={() => setAll(DEL)} className="flex items-center gap-1 rounded-md bg-destructive px-3 py-1 text-xs font-bold text-destructive-foreground"><Trash2 className="h-3.5 w-3.5" />حذف الخطوة</button>
+          <button onClick={() => setMenu(false)} className="rounded-md px-2 py-1 text-xs text-muted-foreground">إلغاء</button>
+        </div>}
+        <button onClick={() => { if (!menu) setOpen(!open); }} onPointerDown={() => { if (keys.length) timer.current = setTimeout(() => setMenu(true), 700); }} onPointerUp={() => clearTimeout(timer.current)} onPointerLeave={() => clearTimeout(timer.current)} onContextMenu={(e) => e.preventDefault()} className="flex w-full select-none items-start gap-2 p-3 text-right">
           <div className="flex-1 space-y-1">
             <div className="text-sm font-bold text-foreground">{st.title}</div>
             {preview && <p className="line-clamp-2 text-xs leading-5 text-muted-foreground">{preview}</p>}
@@ -193,7 +216,7 @@ export function BotFlow({ pw }: { pw: string }) {
     <div dir="rtl" className="mx-auto max-w-4xl space-y-4 p-3">
       <div className="space-y-1">
         <h2 className="text-lg font-bold text-foreground">مسار البوت</h2>
-        <p className="text-sm text-muted-foreground">اضغط على أي خطوة لتعديل رسالتها وأسماء أزرارها، ثم اضغط حفظ. اضغط مطولاً على أي زر لحذفه — يصل التعديل للبوت من الرسالة التالية.</p>
+        <p className="text-sm text-muted-foreground">اضغط على أي خطوة لتعديل رسالتها وأسماء أزرارها، ثم اضغط حفظ. اضغط مطولاً على أي زر أو عنوان خطوة لحذفه — يصل التعديل للبوت من الرسالة التالية.</p>
       </div>
       <div className="grid grid-cols-4 gap-1 rounded-xl sm:grid-cols-7 border bg-muted p-1">
         {TABS.map(([id, t, I]) => (
